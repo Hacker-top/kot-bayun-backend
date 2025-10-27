@@ -1,9 +1,8 @@
 {
-  "name": "kot-bayun-ai-backend",
+  "name": "kot-bayun-ai-backend-gemini",
   "version": "1.0.0",
-  "description": "Backend for the Toxic Pet Telegram Mini App using Vercel and OpenAI.",
-  "main": "api/chat.js",
+  "description": "Backend for the Toxic Pet Telegram Mini App using Vercel and Gemini.",
   "dependencies": {
-    "openai": "^4.0.0" 
+    "@google/genai": "^0.16.0" 
   }
 }
