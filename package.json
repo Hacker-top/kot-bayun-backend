@@ -1,9 +1,0 @@
-{
-  "name": "kot-bayun-ai-backend",
-  "version": "1.0.0",
-  "description": "Backend for the Toxic Pet Telegram Mini App using Vercel and OpenAI.",
-  "main": "api/chat.js",
-  "dependencies": {
-    "openai": "^4.0.0" 
-  }
-}
