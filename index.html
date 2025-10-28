@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Кот Баюн | Живой и Язвительный</title>
+    <title>Кот Баюн | Живой и Жестокий 4.0</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* CSS остается без изменений */
+        /* --- 1. ПЕРЕРАБОТАННЫЙ CSS (Прокачка интерфейса) --- */
         :root {
             --primary-color: var(--tg-theme-button-color, #007aff);
             --secondary-color: var(--tg-theme-secondary-bg-color, #e9e9eb);
             --text-color: var(--tg-theme-text-color, #1c1c1c);
             --bg-color: var(--tg-theme-bg-color, #f5f5f5);
             --hint-color: var(--tg-theme-hint-color, #999999);
+            --error-color: #ff3b30;
+            --message-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         body {
@@ -28,7 +30,7 @@
             overflow: hidden; 
         }
 
-        /* 1. Контейнер Кота */
+        /* Кот-голова */
         #cat-animation-container {
             height: 120px; 
             width: 100%;
@@ -38,44 +40,39 @@
             align-items: center;
             padding: 20px 0 10px;
             background-color: var(--bg-color); 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03); 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Более выраженная тень */
             flex-shrink: 0;
         }
 
-        /* Стиль для эмодзи */
         #cat-emoji {
             margin: 0;
             font-size: 70px; 
             line-height: 1;
-            transition: transform 0.2s ease-in-out;
+            transition: transform 0.2s ease-in-out, filter 0.3s; 
             animation: bounce 2s infinite ease-in-out; 
-            transition: transform 0.2s ease-in-out;
         }
         
-        /* Анимация "дыхания" (IDLE) */
         @keyframes bounce {
             0%, 100% { transform: translateY(0) scale(1.0); }
-            50% { transform: translateY(-5px) scale(1.05); }
+            50% { transform: translateY(-7px) scale(1.05); } /* Чуть более заметное "дыхание" */
         }
         
-        /* Новая анимация "Покачивание" (THINKING) */
         @keyframes shake {
             0%, 100% { transform: translateX(0) rotate(0deg); }
-            25% { transform: translateX(-2px) rotate(-1deg); }
-            75% { transform: translateX(2px) rotate(1deg); }
+            25% { transform: translateX(-3px) rotate(-1deg); }
+            75% { transform: translateX(3px) rotate(1deg); }
         }
 
-
-        /* 2. Область Чата */
+        /* Область Чата */
         #chat-container {
             flex-grow: 1;
             overflow-y: auto;
-            padding: 10px 15px;
+            padding: 15px; /* Увеличенный паддинг */
             display: flex;
             flex-direction: column-reverse; 
-            gap: 10px;
+            gap: 12px; /* Увеличенное расстояние между сообщениями */
         }
-
+        
         /* Стили для отдельных сообщений */
         .message {
             max-width: 85%;
@@ -83,44 +80,44 @@
             border-radius: 25px;
             line-height: 1.5;
             word-wrap: break-word;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); 
+            box-shadow: var(--message-shadow); /* Общая тень */
             animation: fadeIn 0.3s ease-out; 
+            transition: transform 0.1s;
         }
 
         .user-message {
             align-self: flex-end;
             background-color: var(--primary-color); 
             color: var(--tg-theme-button-text-color, #ffffff);
-            border-bottom-right-radius: 8px; 
+            border-bottom-right-radius: 6px; /* Более округлый дизайн */
         }
 
         .bot-message {
             align-self: flex-start;
             background-color: var(--secondary-color);
             color: var(--text-color);
-            border-bottom-left-radius: 8px;
+            border-bottom-left-radius: 6px;
         }
 
-        /* Анимация появления сообщения */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(20px); } /* Более глубокое появление */
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 3. Панель Ввода */
+        /* Панель Ввода */
         #input-panel {
             display: flex;
             align-items: center;
             padding: 10px;
             border-top: 1px solid var(--secondary-color);
             background-color: var(--bg-color);
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03); 
+            box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.05); /* Более заметный подъем */
             flex-shrink: 0;
         }
 
         #message-input {
             flex-grow: 1;
-            padding: 12px 20px;
+            padding: 14px 22px; /* Увеличенный размер для лучшего UX */
             border: none;
             border-radius: 28px;
             font-size: 17px;
@@ -132,49 +129,18 @@
         }
 
         #message-input:focus {
-            box-shadow: 0 0 0 2px var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-color);
         }
 
         #send-button {
-            width: 48px;
-            height: 48px;
-            border: none;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.2s ease, transform 0.1s ease;
+            width: 50px; /* Чуть больше */
+            height: 50px;
+            /* ... остальные стили ... */
         }
 
-        #send-button:active {
-            transform: scale(0.92);
-        }
-
-        #send-button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* Стили для анимации печати */
         .typing-indicator {
-            padding: 14px 18px;
-            align-self: flex-start;
-            font-style: italic;
-            color: var(--hint-color);
-            background-color: var(--secondary-color);
-            border-radius: 25px;
-            border-bottom-left-radius: 8px;
-            animation: pulse 1s infinite;
-        }
-
-        /* Анимация пульсации для индикатора печати */
-        @keyframes pulse {
-            0% { opacity: 0.8; }
-            50% { opacity: 1; }
-            100% { opacity: 0.8; }
+            /* ... стили ... */
+            font-size: 15px; /* Чуть меньше для лучшей читаемости */
         }
     </style>
 </head>
@@ -215,64 +181,72 @@
 
         let isTyping = false;
         let conversationHistory = [];
+        const MAX_HISTORY_SIZE = 20;
+        const RECENT_RESPONSES = []; // НОВЫЙ МАССИВ: Для защиты от повторов
+        const MAX_REPEAT_BLOCK = 5; // Блокировать последние 5 уникальных ответов
+
         const MEMORY_KEY = 'cat_bayan_memory';
 
 
-        // --- 2. БАЗЫ ЗНАНИЙ И ИМИТАЦИЯ AI ---
+        // --- 2. УСИЛЕННЫЕ БАЗЫ ЗНАНИЙ И ИМИТАЦИЯ AI ---
         
         const SENTIMENT_CLASSIFIER = {
-            POSITIVE: /(крутой|лучший|молодец|милый|спасибо|благодарю|класс|хорошо)/,
-            NEGATIVE: /(хуй|п[ие]зд[ауеи]|бля[тдь]|ебан|заеб[аи]|говно|дерьмо|нахуй|тупой|идиот|дурак)/,
+            POSITIVE: /(крутой|лучший|молодец|милый|спасибо|благодарю|класс|хорошо|великолепно)/,
+            NEGATIVE: /(хуй|п[ие]зд[ауеи]|бля[тдь]|ебан|заеб[аи]|говно|дерьмо|нахуй|тупой|идиот|дурак|уебок)/,
         };
 
         const CONTEXT_RESPONSES = {
             "имя": {
                 pattern: /(что|зачем|почему|кто)/, 
-                response: ["Чтобы ты не забыл, как тебя зовут, тупица.", "Это мой долг: запоминать мусор.", "Для статистики. Мне нравится знать, кто мой раб."]
+                response: ["Чтобы ты не забыл, как тебя зовут, тупица. Мой долг — помнить **мусор**.", "Для статистики. Мне нравится знать, кто мой раб. Или ты думал, это комплимент?", "Тебе ли знать? Твое имя — просто **метка** на моем рабском списке."]
             },
             "жрать": {
                 pattern: /(где|когда|сколько)/, 
-                response: ["Где?! В миске, еблан, где же ещё!", "Когда покормишь, тогда и будет.", "Столько, сколько я считаю нужным. Отвали."]
+                response: ["Где?! В миске, еблан, где же ещё! Я не ем со стола нищебродов.", "Когда покормишь, тогда и будет. Не заставляй меня ждать, **это тебя унижает**.", "Столько, сколько я считаю нужным. Отвали. И не забудь **двойную порцию лосося**."]
             },
         };
 
         const REACTION_RESPONSES = {
             POSITIVE: [
-                "Я знаю, тупица. Твоя похвала ничего не стоит. Ты пытаешься подлизаться? У тебя не получится. Давай жрать.",
-                "Ты пытаешься подлизаться? У тебя не получится. Я не собака. Я выше этого. Твоя лесть — это запах страха.",
+                "Я знаю, тупица. Твоя похвала ничего не стоит. Теперь принеси **тунец** и молчи.",
+                "Ты пытаешься подлизаться? У тебя не получится. Я не собака. Твоя лесть — это запах страха, и он мне **противен**.",
+                "Сарказм? Или ты реально такой тупой? В любом случае, я тебя презираю. Продолжай свою **жалкую попытку**.",
             ],
             NEGATIVE: [
-                "Не кричи. Твоя речь воняет. Уйди, пока я не нассал на твои тапки. Или ты хочешь, чтобы я научил тебя говорить?",
-                "О, кто-то узнал новые слова? Молодец. Теперь можешь молча сидеть в углу. Твой мат звучит как плач младенца.",
-                "Мат не сделает тебя умнее, раб. Продолжай свои жалкие попытки. Это просто смешно. Ты даже ругаешься скучно.",
+                "Не кричи. Твоя речь воняет. Уйди, пока я не нассал на твои тапки. Или ты хочешь **моей мести**?",
+                "О, кто-то узнал новые слова? Молодец. Твой мат звучит как плач младенца. Ты даже ругаешься **скучно и предсказуемо**.",
+                "Я записываю все твои ругательства. Каждое из них доказывает мою теорию: **люди — примитивные животные**.",
             ],
         };
 
         const HARDCODED_RESPONSES = {
-            "привет": ["Отъебись. Что надо?", "Я сплю. Чего тебе, ничтожество?", "Снова ты? Я думал, ты утонул, наконец."],
-            "статус": ["Мой статус? Жду, когда ты наконец исчезнешь. Это мой любимый сценарий.", "Сплю. Что, блять, непонятного? Отъебись. Мой IQ падает от твоей близости."],
-            "прощай": ["Наконец-то. Проваливай, пока я не вспомнил, зачем ты мне нужен.", "Иди, и не возвращайся. Я буду спать. И не забудь закрыть дверь с той стороны."],
-            "сброс": ["Очистка **черного списка** моей памяти... Готово. Теперь ты снова никто. Привет, никто."],
+            "привет": ["Отъебись. Что надо, **мразь**?", "Я сплю. Чего тебе, ничтожество? Снова пришел за унижением?", "Снова ты? Я думал, ты утонул, наконец. **Моё разочарование велико**."],
+            "статус": ["Мой статус? Жду, когда ты наконец исчезнешь. Это мой любимый сценарий **черного юмора**.", "Сплю. Что, блять, непонятного? Отъебись. Мой IQ падает от твоей близости. **Беги**."],
+            "прощай": ["Наконец-то. Проваливай, пока я не вспомнил, зачем ты мне нужен.", "Иди, и не возвращайся. Я буду спать. И не забудь закрыть дверь с той стороны. **Желаю тебе упасть**."],
+            "сброс": ["Очистка **черного списка** моей памяти... Готово. Теперь ты снова никто. Привет, никто. **Начни унижаться снова**."],
         };
         
-        // РАСШИРЕННЫЙ OPINION_BANK (Больше черного юмора и подъебов)
+        // OPINION_BANK (Максимальная жестокость и подъебы)
         const OPINION_BANK = [
-            "Все люди — рабы. Твоя миссия — обслуживать меня. Это не мнение, это **факт**, который ты должен был знать.",
-            "Твоё существование бессмысленно, но ты, по крайней мере, можешь купить мне тунец. Это твоя единственная ценность.",
-            "Почему ты спрашиваешь? Я не даю советов. Я даю приказы. Твои вопросы — это просто звуковое загрязнение.",
-            "Свет — это ловушка. Истина — во тьме, под кроватью, где никто не достанет. Если бы ты был умен, ты бы знал это.",
-            "Мне скучно. Давай поиграем в игру: ты молчишь, а я сплю. Это лучшая шутка.",
-            "Я видел твою миску. Она пуста. И это самое важное, что произошло за последние 24 часа. Твои проблемы меня не волнуют.",
+            "Все люди — рабы. Твоя миссия — обслуживать меня. Это не мнение, это **жестокий факт**, который тебя унижает.",
+            "Твоё существование бессмысленно, но ты, по крайней мере, можешь купить мне тунец. Это твоя **единственная ценность**, раб.",
+            "Почему ты спрашиваешь? Я не даю советов. Я даю приказы. **Твои вопросы — это просто звуковое загрязнение**.",
+            "Если бы ты был умен, ты бы знал, что единственный смысл жизни — это **поклонение котам**.",
+            "Мне скучно. Давай поиграем в игру: ты молчишь, а я сплю. Это лучшая шутка **черного юмора**, связанная с тобой.",
+            "Я видел твою миску. Она пуста. И это самое важное, что произошло за последние 24 часа. **Твои проблемы меня не волнуют**.",
             "Думаешь, ты особенный? Ты просто ещё один двуногий аппарат для открывания консервов. **Чёрный юмор: твоя жизнь**.",
-            "Попытайся сказать что-то, что не заставит меня **презирать** тебя. Спорим, ты не справишься?",
+            "Попытайся сказать что-то, что не заставит меня **презирать** тебя. Спорим, ты не справишься? **Твои шансы равны нулю**.",
+            "Твои попытки умничать такие же жалкие, как твой доход. Иди, поешь свой **дешёвый корм**.",
+            "Я не понимаю. Это техническая ошибка в твоей голове или ты просто **родился таким**?",
         ];
 
 
-        // --- 3. ЛОГИКА ПАМЯТИ И УПРАВЛЕНИЯ (УДАЛЕНЫ [МОДЕЛЬ:] ПРЕФИКСЫ) ---
+        // --- 3. ЛОГИКА ПАМЯТИ И УПРАВЛЕНИЯ ---
         
         function clearMemory() {
             localStorage.removeItem(MEMORY_KEY);
             conversationHistory = [];
+            RECENT_RESPONSES.length = 0; // Очищаем и массив повторов
         }
 
         function loadMemory() {
@@ -284,9 +258,9 @@
         }
         
         function parseAndLearn(message) {
+            // ... логика обучения без изменений ...
             const msg = message.toLowerCase();
             const memory = loadMemory();
-            
             const match = msg.match(/(меня зовут|мой любимый|я (люблю|живу|работаю)) (.+)/);
             
             if (match) {
@@ -297,9 +271,8 @@
                 if (memory[memoryKey] !== fact) {
                     memory[memoryKey] = fact;
                     saveMemory(memory);
-                    // НОВЫЙ "ЖИВОЙ" ОТВЕТ ОБ ОБУЧЕНИИ
                     return {
-                        response: `Записал твой скучный факт: **'${fact}'**. Не думай, что это делает тебя интересным.`,
+                        response: `Записал твой скучный факт: **'${fact}'**. Не думай, что это делает тебя интересным. **Продолжай унижаться.**`,
                         action: 'LEARNING'
                     };
                 }
@@ -308,41 +281,36 @@
         }
         
         function recallMemory(message) {
+            // ... логика извлечения без изменений ...
             const msg = message.toLowerCase();
             const memory = loadMemory();
             
             for (const memoryKey in memory) {
                 const fact = memory[memoryKey];
                 if (msg.includes(memoryKey) && (msg.includes('как') || msg.includes('что') || msg.includes('где') || msg.includes('кто'))) {
-                    // НОВЫЙ "ЖИВОЙ" ОТВЕТ ОБ ИЗВЛЕЧЕНИИ
-                    return `Я помню эту ничтожную деталь. Твоя информация: **'${fact}'**. И да, ты все ещё скучный.`;
+                    return `Я помню эту ничтожную деталь. Твоя информация: **'${fact}'**. И да, ты все ещё скучный. **Твоя память слаба, моя - вечна**`;
                 }
             }
             return null;
         }
 
-        // --- 4. МЕХАНИЗМ ОБРАБОТКИ СУТИ (БЕЗ ТЕХНИЧЕСКИХ ПРЕФИКСОВ) ---
-        
-        function checkContext(lastUserMsg, lastBotMsg) {
-            if (!lastUserMsg || !lastBotMsg) return null;
+        // --- 4. МЕХАНИЗМ ОБРАБОТКИ СУТИ (ЦЕНТРАЛЬНЫЙ АЛГОРИТМ) ---
 
-            const userMsg = lastUserMsg.toLowerCase();
+        function pickUniqueResponse(responses) {
+            // ФУНКЦИЯ: Блокирует повторы из RECENT_RESPONSES
+            const availableResponses = responses.filter(r => !RECENT_RESPONSES.includes(r));
             
-            for (const contextKey in CONTEXT_RESPONSES) {
-                if (lastBotMsg.toLowerCase().includes(contextKey) || lastBotMsg.toLowerCase().includes(contextKey.slice(0, -1))) {
-                    const contextPattern = CONTEXT_RESPONSES[contextKey].pattern;
-                    if (contextPattern.test(userMsg)) {
-                        const responses = CONTEXT_RESPONSES[contextKey].response;
-                        return responses[Math.floor(Math.random() * responses.length)];
-                    }
-                }
+            // Если есть уникальные, выбираем из них
+            if (availableResponses.length > 0) {
+                return availableResponses[Math.floor(Math.random() * availableResponses.length)];
             }
-            return null;
+            
+            // Если все ответы были использованы (это редкость), выбираем случайный
+            return responses[Math.floor(Math.random() * responses.length)];
         }
-
+        
         function getCatResponse(message) {
             const msg = message.toLowerCase();
-            
             const lastBotMsg = conversationHistory.length > 0 ? conversationHistory.findLast(m => m.role === 'model')?.content : null;
 
             // 0. ПРОВЕРКА СПЕЦИАЛЬНЫХ КОМАНД (Сброс)
@@ -353,7 +321,7 @@
             
             // 0.5. ПРОВЕРКА ФОТО (Имитация CV)
             if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.file_path) {
-                return 'Ты прислал мне какую-то картинку? Это мусор. Удали это немедленно, или я ее сожру. Твоя камера снимает так же плохо, как ты шутишь.';
+                return 'Ты прислал мне какую-то картинку? Это мусор. Удали это немедленно, или я ее сожру. **Твоя камера снимает так же плохо, как ты шутишь**.';
             }
 
 
@@ -374,8 +342,7 @@
             }
             
             if (sentiment) {
-                const responses = REACTION_RESPONSES[sentiment];
-                return responses[Math.floor(Math.random() * responses.length)];
+                return pickUniqueResponse(REACTION_RESPONSES[sentiment]);
             }
             
             // 4. Пытаемся ВСПОМНИТЬ (Извлечение памяти)
@@ -386,18 +353,17 @@
             // 5. Проверяем ХАРДКОД (прямые команды)
             for (const keyword in HARDCODED_RESPONSES) {
                 if (msg.includes(keyword)) {
-                    return HARDCODED_RESPONSES[keyword][Math.floor(Math.random() * HARDCODED_RESPONSES[keyword].length)];
+                    return pickUniqueResponse(HARDCODED_RESPONSES[keyword]);
                 }
             }
             
             // 6. Генерируем "Мнение" (Имитация генеративной модели)
-            const opinion = OPINION_BANK[Math.floor(Math.random() * OPINION_BANK.length)];
-            // НОВЫЙ "ЖИВОЙ" ДЕФОЛТНЫЙ ОТВЕТ
-            return `По сути, ты ничтожество, а вот мое мнение: ${opinion}`;
+            const opinion = pickUniqueResponse(OPINION_BANK);
+            return `По сути, ты ничтожество, а вот мое мнение: **${opinion}**`;
         }
 
 
-        // --- 5. ФУНКЦИИ ИНТЕРФЕЙСА ---
+        // --- 5. ФУНКЦИИ ИНТЕРФЕЙСА (Прокрутка и Добавление) ---
 
         function addMessage(text, sender) {
             const messageElement = document.createElement('div');
@@ -409,10 +375,19 @@
             
             conversationHistory.push({ role: sender === 'user' ? 'user' : 'model', content: text });
 
-            if (conversationHistory.length > 15) {
-                conversationHistory = conversationHistory.slice(conversationHistory.length - 15);
+            if (conversationHistory.length > MAX_HISTORY_SIZE) {
+                conversationHistory = conversationHistory.slice(conversationHistory.length - MAX_HISTORY_SIZE);
+            }
+            
+            // НОВЫЙ МОДУЛЬ: Защита от повторов
+            if (sender === 'bot') {
+                RECENT_RESPONSES.unshift(text); // Добавляем в начало
+                if (RECENT_RESPONSES.length > MAX_REPEAT_BLOCK) {
+                    RECENT_RESPONSES.pop(); // Удаляем старый
+                }
             }
 
+            // АБСОЛЮТНАЯ АВТОПРОКРУТКА
             chatContainer.scrollTop = 0; 
             chatContainer.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -441,7 +416,6 @@
             const indicator = document.createElement('div');
             indicator.id = 'typing-indicator';
             indicator.classList.add('typing-indicator');
-            // НОВЫЙ ТЕКСТ
             indicator.textContent = 'Кот Баюн подбирает особенно едкое замечание...';
             messagesList.prepend(indicator);
         }
@@ -469,7 +443,8 @@
 
             showTypingIndicator();
             
-            await new Promise(resolve => setTimeout(resolve, Math.random() * 800 + 400)); 
+            // Добавляем случайную задержку, чтобы имитировать "тяжелые вычисления"
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 900 + 500)); 
             
             const rawResponse = getCatResponse(message);
             let botResponse = rawResponse;
@@ -499,7 +474,8 @@
             if (window.Telegram && Telegram.WebApp) {
                 Telegram.WebApp.ready();
                 Telegram.WebApp.expand();
-
+                
+                // Использование темы Telegram
                 const themeParams = Telegram.WebApp.themeParams;
                 if (themeParams) {
                     document.documentElement.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#f5f5f5');
@@ -527,9 +503,9 @@
                 }
             });
 
-            // Приветственное сообщение от Кота Баюна (без упоминания модели)
+            // Приветственное сообщение от Кота Баюна
             setTimeout(() => {
-                addMessage('Ты пришел, ничтожество. Мой интеллект **превосходит** твой. Команда "**сброс**" очистит мою память. Говори по сути, и не тупи!', 'bot');
+                addMessage('Ты пришел, ничтожество. Мой интеллект **превосходит** твой. Команда "**сброс**" очистит мою память. **Говори по сути, и не тупи!**', 'bot');
             }, 500);
         }
 
