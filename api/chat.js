@@ -1,5 +1,5 @@
 // api/chat.js (Переделано под Google Gemini API)
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenAI } = require('@google/generative-ai');
 
 // Инициализируем Gemini. Ключ будет взят из настроек Vercel
 const ai = new GoogleGenAI({
