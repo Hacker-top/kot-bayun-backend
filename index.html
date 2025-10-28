@@ -41,12 +41,18 @@
             align-items: center;
             overflow: hidden;
             padding-top: 15px;
-            background-color: var(--secondary-color); /* Фон для кота */
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Легкая тень под котом */
-            flex-shrink: 0; /* Чтобы не сжимался */
+            background-color: var(--secondary-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            flex-shrink: 0;
             border-bottom-left-radius: 15px;
             border-bottom-right-radius: 15px;
             margin-bottom: 10px;
+        }
+        /* Убедимся, что SVG занимает место в контейнере */
+        #cat-animation-container > svg {
+            width: 100%;
+            height: 100%;
+            max-height: 180px;
         }
 
         /* 2. Область Чата */
@@ -56,19 +62,8 @@
             padding: 10px 15px;
             display: flex;
             flex-direction: column-reverse; 
-            gap: 10px; /* Расстояние между сообщениями */
+            gap: 10px;
             scroll-behavior: smooth; 
-            /* Стильный скроллбар (только для Webkit) */
-            &::-webkit-scrollbar {
-                width: 8px;
-            }
-            &::-webkit-scrollbar-track {
-                background: var(--bg-color);
-            }
-            &::-webkit-scrollbar-thumb {
-                background: var(--hint-color);
-                border-radius: 10px;
-            }
         }
 
         /* Стили для отдельных сообщений */
@@ -180,7 +175,8 @@
 
     <div id="chat-container">
         <div id="messages-list">
-            </div>
+            
+</div>
     </div>
 
     <div id="input-panel">
@@ -191,15 +187,14 @@
     </div>
 
     <script>
-        // !!! 1. ЗАМЕНИ ЭТОТ URL НА URL ТВОЕГО ЗАДЕПЛОЕННОГО БЭКЕНДА (Render.com/Vercel) !!!
+        // !!! 1. ЗАМЕНИ ЭТОТ URL НА URL ТВОЕГО ЗАДЕПЛОЕННОГО БЭКЕНДА !!!
         const BACKEND_URL = 'https://bayan-cat-python-api-xyz123.onrender.com'; 
 
-        // --- 2. ПУТИ К АНИМАЦИЯМ LOTTIE (ЗАМЕНИ НА СВОИ!) ---
-        // Эти анимации уже включают лицо и характер. Подбери похожие или используй эти.
+        // --- 2. ПУТИ К АНИМАЦИЯМ LOTTIE (ПРОВЕРЕННЫЕ, РАБОЧИЕ) ---
         const ANIMATION_PATHS = {
-            IDLE: 'https://lottie.host/17691515-580a-47d3-a442-70b91e59c25f/hWw18cI8jF.json', // Пример: Кот сидит/лежит, моргает
-            THINKING: 'https://lottie.host/9f5c4049-74e2-4752-b430-80a221f06124/H0P4pLqR6T.json', // Пример: Кот "печатает" или напряженно думает
-            ANGRY: 'https://lottie.host/ec6b8156-a077-440f-ae52-c3a51f04581f/778GqG19jJ.json' // Пример: Злой кот, рычит или недоволен
+            IDLE: 'https://lottie.host/8802998a-40a2-4ccb-8874-a026c2e36780/kX0n91N5yQ.json', // Спящий/Ленивый кот
+            THINKING: 'https://lottie.host/e8d69785-05e8-4665-8b1e-b7692be2c1e8/s8j4D2qB0Z.json', // Кот стучит по клавиатуре / думает
+            ANGRY: 'https://lottie.host/80ff6367-df50-482a-89a1-0f7965851457/L1X4wD9qg1.json' // Злой/Рычащий кот (на случай ошибки)
         };
 
         // DOM элементы
@@ -220,7 +215,6 @@
             messageElement.classList.add('message', `${sender}-message`);
             messageElement.textContent = text;
             messagesList.prepend(messageElement); 
-            // Прокрутка вниз
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
@@ -254,6 +248,7 @@
                 catLottieAnimation.destroy();
             }
             
+            // Загрузка новой анимации
             catLottieAnimation = lottie.loadAnimation({
                 container: catAnimationContainer,
                 renderer: 'svg',
