@@ -5,7 +5,143 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Кот Баюн | Твой язвительный питомец</title>
     
-    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
+
+    <style>
+        /* Общие стили и сброс */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* Используем переменные Telegram для фона */
+            background-color: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #1c1c1c);
+            display: flex;
+            flex-direction: column;
+            height: 100vh; 
+            overflow: hidden; 
+            transition: background-color 0.3s;
+        }
+
+        /* 1. Контейнер Анимации Кота */
+        #cat-animation-container {
+            height: 180px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding-top: 10px;
+        }
+
+        /* 2. Область Чата */
+        #chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px 15px;
+            display: flex;
+            flex-direction: column-reverse; 
+            gap: 8px;
+            scroll-behavior: smooth; 
+        }
+
+        /* Стили для отдельных сообщений */
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.3s ease-out; 
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--tg-theme-button-color, #007aff); 
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border-bottom-right-radius: 6px; 
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: var(--tg-theme-secondary-bg-color, #e9e9eb);
+            color: var(--tg-theme-text-color, #1c1c1c);
+            border-bottom-left-radius: 6px;
+        }
+
+        /* Анимация появления сообщения */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 3. Панель Ввода */
+        #input-panel {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            border-top: 1px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.05); 
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 22px;
+            font-size: 16px;
+            outline: none;
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            margin-right: 8px;
+            transition: background-color 0.2s;
+        }
+
+        #send-button {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background-color: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #send-button:active {
+            transform: scale(0.95);
+        }
+
+        #send-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Стили для анимации печати */
+        .typing-indicator {
+            padding: 12px 16px;
+            align-self: flex-start;
+            font-style: italic;
+            color: var(--tg-theme-hint-color, #999999);
+            background-color: var(--tg-theme-secondary-bg-color, #e9e9eb);
+            border-radius: 20px;
+            border-bottom-left-radius: 6px;
+            animation: pulse 1s infinite;
+        }
+
+        /* Анимация пульсации для индикатора печати */
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+    </style>
 </head>
 <body>
 
@@ -24,9 +160,171 @@
         </button>
     </div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
+    <script>
+        // !!! 1. ЗАМЕНИ ЭТОТ URL НА URL ТВОЕГО ЗАДЕПЛОЕННОГО БЭКЕНДА (Render.com/Vercel) !!!
+        const BACKEND_URL = 'https://bayan-cat-api-xyz123.onrender.com'; 
 
-    <script src="script.js"></script>
+        // --- 2. ПУТИ К АНИМАЦИЯМ LOTTIE (ЗАМЕНИ!) ---
+        const ANIMATION_PATHS = {
+            IDLE: 'https://assets-v2.lottiefiles.com/a/5a9101d2-0949-436b-967a-e457582b95b8/qK6wTzVd1Q.json', // Кот просто сидит/лежит (ПРИМЕР)
+            THINKING: 'https://assets-v2.lottiefiles.com/a/90f0d366-6815-468c-b695-81676646b9a8/W1v7u7cM3v.json', // Кот "думает" / "печатает" (ПРИМЕР)
+            ANGRY: 'https://assets-v2.lottiefiles.com/a/f9b8c005-72d9-43c2-a8c6-2c5e533c373a/vX6yF9c8hP.json' // Кот злится / ошибка (ПРИМЕР)
+        };
+
+        // DOM элементы
+        const messagesList = document.getElementById('messages-list');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const chatContainer = document.getElementById('chat-container');
+        const catAnimationContainer = document.getElementById('cat-animation-container');
+
+        // Переменные
+        let catLottieAnimation;
+        let isTyping = false;
+
+        // --- ФУНКЦИИ УТИЛИТЫ ---
+
+        /**
+         * Создает и добавляет новое сообщение в чат
+         */
+        function addMessage(text, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', `${sender}-message`);
+            messageElement.textContent = text;
+            messagesList.prepend(messageElement); 
+            // Прокрутка вниз
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        /**
+         * Показывает индикатор "Кот печатает..."
+         */
+        function showTypingIndicator() {
+            if (isTyping) return;
+            isTyping = true;
+            
+            setCatState('THINKING'); 
+            
+            const indicator = document.createElement('div');
+            indicator.id = 'typing-indicator';
+            indicator.classList.add('typing-indicator');
+            indicator.textContent = 'Кот Баюн подбирает особенно язвительный ответ...';
+            messagesList.prepend(indicator);
+        }
+
+        /**
+         * Скрывает индикатор печати
+         */
+        function hideTypingIndicator() {
+            isTyping = false;
+            setCatState('IDLE'); 
+            
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                setTimeout(() => indicator.remove(), 200); 
+            }
+        }
+
+        /**
+         * Управляет анимацией Lottie
+         */
+        function setCatState(state) {
+            const animationPath = ANIMATION_PATHS[state] || ANIMATION_PATHS.IDLE;
+            
+            if (catLottieAnimation) {
+                catLottieAnimation.destroy();
+            }
+            
+            catLottieAnimation = lottie.loadAnimation({
+                container: catAnimationContainer,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                path: animationPath
+            });
+        }
+
+        // --- ОСНОВНАЯ ЛОГИКА ---
+
+        /**
+         * Отправка сообщения на бэкенд
+         */
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            if (!message || isTyping) return;
+
+            addMessage(message, 'user');
+            messageInput.value = '';
+            sendButton.disabled = true;
+
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Сервер ответил ошибкой: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const botResponse = data.response;
+
+                addMessage(botResponse, 'bot');
+
+            } catch (error) {
+                console.error('Ошибка при получении ответа от AI:', error);
+                setCatState('ANGRY'); 
+                addMessage('Опять сломалось, раб. Почини уже свой сервер. Мне лень.', 'bot');
+            } finally {
+                hideTypingIndicator();
+                sendButton.disabled = false;
+            }
+        }
+
+        // --- ИНИЦИАЛИЗАЦИЯ ---
+
+        function init() {
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+
+                const headerColor = Telegram.WebApp.themeParams.header_bg_color;
+                if (headerColor) {
+                    document.documentElement.style.setProperty('--tg-theme-header-bg-color', headerColor);
+                }
+
+                Telegram.WebApp.onEvent('viewportChanged', () => {
+                    Telegram.WebApp.expand();
+                });
+                
+            } else {
+                console.warn('Telegram WebApp не обнаружен. Запуск в режиме отладки.');
+            }
+
+            setCatState('IDLE'); 
+
+            // Обработчики:
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !sendButton.disabled) {
+                    sendMessage();
+                }
+            });
+
+            // Приветственное сообщение от Кота Баюна
+            setTimeout(() => {
+                addMessage('Ты пришел, ничтожество. Не отвлекай меня от сна, но если что-то нужно — говори, пока я не передумал.', 'bot');
+            }, 500);
+        }
+
+        init();
+    </script>
 </body>
 </html>
