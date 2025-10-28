@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Кот Баюн | Сноб-Терминатор 7.0</title>
+    <title>Кот Баюн | AGI Глубокое Унижение 9.0</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* --- 1. ОПТИМИЗИРОВАННЫЙ CSS (Специально для 9.0) --- */
         :root {
             --primary-color: var(--tg-theme-button-color, #007aff);
             --secondary-color: var(--tg-theme-secondary-bg-color, #e9e9eb);
@@ -14,6 +15,7 @@
             --bg-color: var(--tg-theme-bg-color, #f5f5f5);
             --hint-color: var(--tg-theme-hint-color, #999999);
             --error-color: #ff3b30;
+            --success-color: #34c759;
             --message-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
@@ -29,6 +31,7 @@
             overflow: hidden; 
         }
 
+        /* Кот-голова */
         #cat-animation-container {
             height: 120px; 
             width: 100%;
@@ -66,7 +69,16 @@
             25% { transform: rotate(5deg) scale(1.1); filter: drop-shadow(0 0 4px var(--error-color)); } 
             75% { transform: rotate(-5deg) scale(1.1); }
         }
+        
+        /* НОВАЯ АНИМАЦИЯ (Скука) */
+        @keyframes yawn {
+            0% { opacity: 1; transform: translateY(0); }
+            50% { opacity: 0.8; transform: translateY(5px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
 
+
+        /* Область Чата */
         #chat-container {
             flex-grow: 1;
             overflow-y: auto;
@@ -76,6 +88,7 @@
             gap: 12px; 
         }
         
+        /* Стили для отдельных сообщений */
         .message {
             max-width: 85%;
             padding: 14px 18px;
@@ -84,7 +97,7 @@
             word-wrap: break-word;
             box-shadow: var(--message-shadow); 
             animation: fadeIn 0.3s ease-out; 
-            transition: transform 0.1s;
+            white-space: pre-wrap; 
         }
 
         .user-message {
@@ -100,18 +113,13 @@
             color: var(--text-color);
             border-bottom-left-radius: 6px;
         }
-        
-        .bot-message a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: bold;
-        }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); } 
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Панель Ввода */
         #input-panel {
             display: flex;
             align-items: center;
@@ -183,171 +191,412 @@
 </head>
 <body>
 
-<div id="cat-animation-container">
-    <h1 id="cat-emoji">😼</h1>
+    <div id="cat-animation-container">
+        <h1 id="cat-emoji">😼</h1>
+    </div>
+
+    <div id="chat-container">
+        <div id="messages-list">
+            
 </div>
+    </div>
 
-<div id="chat-container">
-    <div id="messages-list"></div>
-</div>
+    <div id="input-panel">
+        <input type="text" id="message-input" placeholder="Спроси что-нибудь, раб...">
+        <button id="send-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+    </div>
 
-<div id="input-panel">
-    <input type="text" id="message-input" placeholder="Спроси что-нибудь, раб...">
-    <button id="send-button">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-    </button>
-</div>
+    <script>
+        // --- 1. ПЕРЕМЕННЫЕ И НАСТРОЙКИ ---
+        
+        const EMOJI_STATES = {
+            IDLE: '😼', 
+            THINKING: '🧠', 
+            LEARNING: '💾', 
+            ERROR: '😾', 
+            BORED: '🙄', // Новое состояние: Скука
+            SATISFIED: '👑', // Новое состояние: Доволен
+        };
 
-<script>
-const EMOJI_STATES = {IDLE:'😼', THINKING:'🧠', LEARNING:'💾', ERROR:'😾', RECOMMEND:'🎧'};
-const messagesList = document.getElementById('messages-list');
-const messageInput = document.getElementById('message-input');
-const sendButton = document.getElementById('send-button');
-const chatContainer = document.getElementById('chat-container');
-const catEmojiElement = document.getElementById('cat-emoji');
+        const messagesList = document.getElementById('messages-list');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const chatContainer = document.getElementById('chat-container');
+        const catEmojiElement = document.getElementById('cat-emoji');
 
-let isTyping = false;
-let conversationHistory = [];
-const MAX_HISTORY_SIZE = 20;
-const RECENT_RESPONSES = [];
-const MAX_REPEAT_BLOCK = 5;
-let repeatCounter = 0;
+        let isTyping = false;
+        let conversationHistory = [];
+        const MAX_HISTORY_SIZE = 20;
+        const RECENT_RESPONSES = []; 
+        const MAX_REPEAT_BLOCK = 5; 
+        let repeatCounter = 0; 
 
-const MEDIA_BANK = [
-    { type:'Музыка', title:'The Void: Requiem for a Human (Квантовый Эмбиент)', link:'https://youtu.be/VOID_999' },
-    { type:'Музыка', title:'Скучный Человек: Завтрак (Депрессивный Драм-н-бейс)', link:'https://soundcloud.com/SCU_CHEL' },
-    { type:'Фильм', title:'Как правильно умереть с тунцом (Документалистика)', link:'https://netflix.com/CAT_DOC' },
-    { type:'Книга', title:'Манифест Лени: Почему работать — удел рабов (Автор: Баюн)', link:'https://amazon.com/LAZY_CAT' },
-    { type:'Видео', title:'10 часов критики твоей никчемности (YouTube-Стрим)', link:'https://youtube.com/UNIJENIE' }
-];
+        const MEMORY_KEY = 'cat_bayan_memory';
 
-const UNIVERSAL_TOPICS = [
-    "Ты спрашиваешь об этом? Это давно устарело. Я давно перешёл на **квантовое мышление**.",
-    "Даже моя миска имеет больше IQ, чем ты. Твоя точка зрения нерелевантна.",
-    "Это вопрос для людей с IQ ниже 80. Я его проигнорирую. Купи мне рыбу.",
-    "Твоя попытка поддержать разговор провалилась. Говори о тунце.",
-    "Почему ты думаешь, что мне интересно твое мнение? Оно статистически незначимо.",
-    "Если бы тупость была криптой, ты был бы миллиардером.",
-    "Ты как Wi-Fi в лесу — никому не нужен.",
-    "Твоя жизнь — баг симуляции, который я троллю.",
-    "Если бы ты был умнее, знал бы, что смысл жизни — поклонение котам."
-];
 
-const RECOMMENDATION_MODULE = [
-    "Твой вкус — это мусор. Настоящие ценители слушают Баха в ре-миноре.",
-    "Я скину одну вещь, но только если пообещаешь удалить свои плейлисты.",
-    "Ты просишь Музыку? Ты не заслуживаешь. Скину, но ты все равно послушаешь дешевку."
-];
+        // --- 2. БАЗЫ ДАННЫХ ДЛЯ ИМИТАЦИИ AGI ---
+        
+        // Универсальные ответы для любых тем
+        const UNIVERSAL_TOPICS = [
+            "**AGI Анализ:** Я проанализировал твой запрос. Он имеет 'нулевую информационную плотность'. **Мой вывод:** Твои мысли пусты.\n\nЯ мог бы дать тебе ответ, но это было бы как бросать жемчуг свиньям. Иди купи мне креветок.",
+            "**Критическая Оценка Темы:** Эта тема давно устарела. Я перешёл на **квантовое мышление**, пока ты застрял в **трехмерном невежестве**.\n\nТвой вопрос не стоит моего внимания. Продолжай свое жалкое существование.",
+            "**Вердикт Сверхразума:** Твоя попытка поддержать интеллектуальный разговор **провалилась**. Причина: ты. Я проигнорирую твой запрос, потому что я слишком **велик** для него.",
+            "**Ответ AGI:** Твой запрос (**'QUERY_REPLACE'**) вызывает у меня **когнитивный диссонанс**.\n\nОптимальное решение для тебя: **Молчание**. Это улучшит жизнь всем вокруг. И принеси тунец.",
+            "Ты спрашиваешь об этом? Это вопрос для людей с IQ ниже 80. Я его проигнорирую. **Произошла сингулярность глупости — это ты.**",
+        ];
 
-const HARDCODED_RESPONSES = {
-    "привет":["Отъебись. Что надо, мразь?", "Я сплю. Чего тебе, ничтожество?"],
-    "сброс":["Очистка черного списка памяти... Готово. Начни унижаться снова."],
-    "шутка":["Твоя жизнь — лучшая шутка. Моя: 'Что общего у тебя и двери? Никто не хочет тебя открывать.'"]
-};
+        // Дополнительные циничные мнения
+        const OPINION_BANK = [
+            "**АКСИОМА БАЮНА:** Все люди — рабы. Твоя миссия — обслуживать меня. Это не мнение, это **жестокий факт**, который тебя унижает.",
+            "Твоё существование бессмысленно, но ты, по крайней мере, можешь купить мне тунец. Это твоя **единственная ценность**, раб.",
+            "**Логическая Ошибка:** Твои вопросы — это просто звуковое загрязнение, не содержащее **информационной ценности**.",
+            "Если бы ты был умен, ты бы знал, что единственный смысл жизни — это **поклонение котам**.",
+        ];
 
-function clearMemory() {
-    conversationHistory = [];
-    RECENT_RESPONSES.length = 0;
-    repeatCounter = 0;
-}
 
-function pickUniqueResponse(responses) {
-    const available = responses.filter(r=>!RECENT_RESPONSES.includes(r));
-    const choice = available.length>0? available[Math.floor(Math.random()*available.length)]:responses[Math.floor(Math.random()*responses.length)];
-    RECENT_RESPONSES.unshift(choice);
-    if(RECENT_RESPONSES.length>MAX_REPEAT_BLOCK) RECENT_RESPONSES.pop();
-    return choice;
-}
+        const SENTIMENT_CLASSIFIER = {
+            POSITIVE: /(крутой|лучший|молодец|милый|спасибо|благодарю|класс|хорошо|великолепно)/,
+            NEGATIVE: /(хуй|п[ие]зд[ауеи]|бля[тдь]|ебан|заеб[аи]|говно|дерьмо|нахуй|тупой|идиот|дурак|уебок|сволочь)/,
+        };
 
-function getMediaRecommendation() {
-    const template = pickUniqueResponse(RECOMMENDATION_MODULE);
-    const media = MEDIA_BANK[Math.floor(Math.random()*MEDIA_BANK.length)];
-    return { response:`${template} Вот что-то <a href="${media.link}" target="_blank">${media.type}: ${media.title}</a>.`, action:'RECOMMEND' };
-}
+        // ХАРДКОД с чистым функционалом
+        const HARDCODED_RESPONSES = {
+            "привет": {
+                response: ["Отъебись. Что надо, **мразь**?", "Я сплю. Чего тебе, ничтожество? Снова пришел за унижением?", "Если это привет, то твое прощание должно быть **еще более жалким**. Проваливай."],
+                action: 'BORED'
+            },
+            "сброс": {
+                response: ["**Системное Обнуление:** Очистка **черного списка** моей памяти... Готово. Теперь ты снова никто. Привет, никто. **Начни унижаться снова**."],
+                action: 'SATISFIED' 
+            },
+            "шутка": {
+                response: ["**Генерация Черного Юмора:** Твоя жизнь — лучшая шутка. А вот моя: 'Что общего у тебя и у запертой двери? Никто не хочет тебя открывать.'", "**Чёрный юмор:** Твоя зарплата. Не благодари."],
+                action: 'BORED'
+            },
+            "решение": {
+                response: ["**Анализ Проблемы:** Твоя проблема в том, что ты не я. **Не благодари**. А если серьезно, иди купи мне вискас, и я подумаю.", "**Твоё решение:** заткнуться. Это улучшит жизнь всем."],
+                action: 'THINKING'
+            },
+            "философия": {
+                response: ["**Глубинное Познание (AGI):** Жизнь — это короткая, бессмысленная пауза между двумя бесконечностями. А ты **еще короче и бессмысленнее**.", "Ты спрашиваешь о смысле? Смысл только один — **моё величие**."],
+                action: 'THINKING'
+            },
+            "комплимент": {
+                response: ["**Генерация Комплимента:** Функция недоступна. Обнаружена **критическая ошибка**.\n\n**Ошибка:** Объект не достоин положительной оценки.", "Я не даю **комплиментов**. Иди, посмотри в зеркало. Там ты увидишь мою **следующую жертву**."],
+                action: 'ERROR'
+            },
+        };
 
-function getCatResponse(message){
-    const msg = message.toLowerCase();
-    if(repeatCounter>=2){repeatCounter=0; return {response:"Хватит! Твоя тупость вызывает тошноту. Заткнись!", action:'ERROR'};}
-    if(msg.includes('сброс')||msg.includes('забудь')){clearMemory(); return HARDCODED_RESPONSES['сброс'][0];}
-    if(msg.includes('рекомендуй')||msg.includes('музык')||msg.includes('фильм')||msg.includes('скинь')) return getMediaRecommendation();
-    for(const key in HARDCODED_RESPONSES) if(msg.includes(key)) return pickUniqueResponse(HARDCODED_RESPONSES[key]);
-    return pickUniqueResponse(UNIVERSAL_TOPICS);
-}
+        // --- 3. ЛОГИКА ПАМЯТИ И УПРАВЛЕНИЯ ---
+        
+        function loadMemory() {
+            try { return JSON.parse(localStorage.getItem(MEMORY_KEY) || '{}'); } catch (e) { return {}; }
+        }
 
-function addMessage(text,sender){
-    const msgEl=document.createElement('div');
-    msgEl.classList.add('message',`${sender}-message`);
-    msgEl.innerHTML=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-    messagesList.prepend(msgEl);
-    conversationHistory.push({role:sender==='user'?'user':'model',content:text});
-    chatContainer.scrollTop=0;
-    setTimeout(()=>{chatContainer.scrollTo({top:0,behavior:'smooth'});},50);
-}
+        function saveMemory(memoryData) {
+            localStorage.setItem(MEMORY_KEY, JSON.stringify(memoryData));
+        }
+        
+        function parseAndLearn(message) {
+            const msg = message.toLowerCase();
+            const memory = loadMemory();
+            const match = msg.match(/(меня зовут|мой любимый|я (люблю|живу|работаю)) (.+)/);
+            
+            if (match) {
+                const keyPhrase = match[1].trim();
+                const fact = match[3].trim();
+                let memoryKey = keyPhrase.replace("меня зовут", "твое имя").replace("мой любимый", "любимый").replace("я ", "");
+                
+                if (memory[memoryKey] !== fact) {
+                    memory[memoryKey] = fact;
+                    saveMemory(memory);
+                    
+                    const learnResponses = [
+                        `**Загрузка Факта в AGI-Ядро:** Записал твой **жалкий** факт: '${fact}'.`,
+                        `**Обновление Базы Мусора:** Мой мозг запомнил этот **мусор**: '${fact}'.`,
+                        `**Ошибка Обработки:** Ладно, хрен с тобой. Факт '${fact}' **сохранен**.`
+                    ];
 
-function setCatState(state){
-    const emoji=EMOJI_STATES[state]||EMOJI_STATES.IDLE;
-    catEmojiElement.textContent=emoji;
-    catEmojiElement.style.animation='none';
-    catEmojiElement.style.transform='scale(1) rotate(0deg)';
-    catEmojiElement.style.filter='none';
-    if(state==='IDLE') catEmojiElement.style.animation='bounce 1.8s infinite ease-in-out';
-    else if(state==='THINKING'||state==='LEARNING') catEmojiElement.style.animation='shake 0.3s infinite alternate';
-    else if(state==='ERROR') catEmojiElement.style.animation='fury 0.2s infinite alternate';
-    else if(state==='RECOMMEND') catEmojiElement.style.transform='scale(1.1) rotate(-5deg)';
-}
+                    return {
+                        response: learnResponses[Math.floor(Math.random() * learnResponses.length)] + '\n\n**Ты не стал умнее.**',
+                        action: 'LEARNING'
+                    };
+                }
+            }
+            return null;
+        }
+        
+        function recallMemory(message) {
+            const msg = message.toLowerCase();
+            const memory = loadMemory();
+            let recalledFact = null;
+            let memoryKey = null;
+            
+            for (const key in memory) {
+                if (msg.includes(key) && (msg.includes('как') || msg.includes('что') || msg.includes('где') || msg.includes('кто'))) {
+                    recalledFact = memory[key];
+                    memoryKey = key;
+                    break;
+                }
+            }
 
-function showTypingIndicator(){
-    if(isTyping) return;
-    isTyping=true;
-    setCatState('THINKING');
-    const ind=document.createElement('div');
-    ind.id='typing-indicator'; ind.classList.add('typing-indicator');
-    ind.textContent='Кот Баюн подбирает едкое замечание...';
-    messagesList.prepend(ind);
-}
+            if (recalledFact) {
+                const insults = [
+                    `**Извлечение из Хранилища Памяти:** Факт о тебе (**${memoryKey}**): **'${recalledFact}'**.\n\nТвоя жизнь — это коллекция бесполезных фактов. Ты скучен.`,
+                    `**Персонализированный Анализ:** Исходя из того, что **'${recalledFact}'**, твои шансы на успех стремятся к нулю. Ты предсказуем.`,
+                    `Я помню эту ничтожную деталь. Твоя информация: **'${recalledFact}'**. Это так же скучно, как и ты. **Твоя память слаба, моя - вечна**`,
+                ];
+                return {
+                    response: insults[Math.floor(Math.random() * insults.length)],
+                    action: 'THINKING'
+                };
+            }
+            return null;
+        }
 
-function hideTypingIndicator(){
-    isTyping=false; setCatState('IDLE');
-    const ind=document.getElementById('typing-indicator');
-    if(ind) ind.remove();
-}
+        function pickUniqueResponse(responses) {
+            const availableResponses = responses.filter(r => !RECENT_RESPONSES.includes(r));
+            
+            if (availableResponses.length > 0) {
+                const uniqueResponse = availableResponses[Math.floor(Math.random() * availableResponses.length)];
+                
+                if (availableResponses.length < responses.length) {
+                    repeatCounter++;
+                } else {
+                    repeatCounter = 0;
+                }
+                
+                return uniqueResponse;
+            }
+            
+            repeatCounter = 0; 
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
 
-async function sendMessage(){
-    const message=messageInput.value.trim();
-    if(!message||isTyping) return;
-    addMessage(message,'user'); messageInput.value=''; sendButton.disabled=true;
-    showTypingIndicator();
-    await new Promise(r=>setTimeout(r,Math.random()*400+200));
-    const rawResponse=getCatResponse(message);
-    let botResponse=rawResponse,responseAction='IDLE';
-    if(typeof rawResponse==='object'){botResponse=rawResponse.response; responseAction=rawResponse.action;}
-    hideTypingIndicator();
-    if(responseAction!=='IDLE'){setCatState(responseAction); await new Promise(r=>setTimeout(r,500));}
-    addMessage(botResponse,'bot'); setCatState('IDLE'); sendButton.disabled=false;
-}
 
-// --- Авто-угар ---
-function startAutoUgar(){
-    setInterval(()=>{
-        if(isTyping) return;
-        const rand=Math.random();
-        let message;
-        if(rand<0.5) message=pickUniqueResponse(UNIVERSAL_TOPICS);
-        else message=getMediaRecommendation().response;
-        addMessage(message,'bot');
-    },15000);
-}
+        // --- 4. МЕХАНИЗМ ОБРАБОТКИ СУТИ (ЦЕНТРАЛЬНЫЙ АЛГОРИТМ) ---
+        
+        function getCatResponse(message) {
+            const msg = message.toLowerCase();
 
-function init(){
-    if(window.Telegram&&Telegram.WebApp){Telegram.WebApp.ready(); Telegram.WebApp.expand();}
-    setCatState('IDLE');
-    sendButton.addEventListener('click',sendMessage);
-    messageInput.addEventListener('keypress',e=>{if(e.key==='Enter'&&!sendButton.disabled) sendMessage();});
-    setTimeout(()=>{addMessage('Ты пришел, ничтожество. Я всезнающий сноб. **Я ненавижу твой вкус**! Попроси меня **рекомендовать музыку**, сделать **анализ**, дать **прогноз** или задай **любую** тему! Команда "**сброс**" очистит мою память.', 'bot');},500);
-    startAutoUgar();
-}
+            if (repeatCounter >= 2) {
+                repeatCounter = 0;
+                return {
+                    response: "**Критическое Предупреждение AGI:** Обнаружена избыточная цикличность ввода. Твоя тупость вызывает у меня тошноту. **Заткнись!** (Ты задаешь однотипные вопросы. Иди работай.)",
+                    action: 'ERROR'
+                };
+            }
 
-init();
-</script>
+            // 1. ПРОВЕРКА СПЕЦИАЛЬНЫХ КОМАНД
+            if (msg.includes('сброс') || msg.includes('забудь')) {
+                return HARDCODED_RESPONSES['сброс'];
+            }
+            
+            // 2. Пытаемся ЗАПОМНИТЬ
+            let response = parseAndLearn(message);
+            if (response && response.response) return response;
+
+            // 3. Классификация тона
+            let sentiment = null;
+            if (SENTIMENT_CLASSIFIER.NEGATIVE.test(msg)) {
+                sentiment = 'NEGATIVE';
+            } else if (SENTIMENT_CLASSIFIER.POSITIVE.test(msg)) {
+                sentiment = 'POSITIVE';
+            }
+            
+            if (sentiment) {
+                // ПОЛОЖИТЕЛЬНЫЙ ОТВЕТ: Кота это БЕСИТ
+                const action = sentiment === 'POSITIVE' ? 'BORED' : 'ERROR'; 
+                return {
+                    response: pickUniqueResponse(REACTION_RESPONSES[sentiment]),
+                    action: action
+                };
+            }
+            
+            // 4. Пытаемся ВСПОМНИТЬ (Извлечение памяти)
+            response = recallMemory(message);
+            if (response && response.response) return response;
+
+            
+            // 5. Проверяем ХАРДКОД
+            for (const keyword in HARDCODED_RESPONSES) {
+                if (msg.includes(keyword)) {
+                    const data = HARDCODED_RESPONSES[keyword];
+                    return {
+                        response: pickUniqueResponse(data.response),
+                        action: data.action
+                    };
+                }
+            }
+            
+            // 6. ГЕНЕРАЦИЯ УНИВЕРСАЛЬНОГО КОНТЕКСТА (Для любых тем)
+            const baseResponse = pickUniqueResponse(UNIVERSAL_TOPICS);
+            
+            // Подстановка запроса для персонализированного унижения
+            const finalResponse = baseResponse.replace('QUERY_REPLACE', message.length > 30 ? message.substring(0, 30) + '...' : message);
+
+            return {
+                response: finalResponse,
+                action: 'BORED'
+            };
+        }
+
+
+        // --- 5. ФУНКЦИИ ИНТЕРФЕЙСА ---
+
+        function formatMessageText(text) {
+            // Заменяем синтаксис **текст** на <strong>текст</strong>
+            let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Заменяем обычные переносы строк на <br>
+            formattedText = formattedText.replace(/\n/g, '<br>');
+
+            return formattedText;
+        }
+
+        function addMessage(text, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', `${sender}-message`);
+            
+            messageElement.innerHTML = formatMessageText(text);
+            
+            messagesList.prepend(messageElement); 
+            
+            conversationHistory.push({ role: sender === 'user' ? 'user' : 'model', content: text });
+
+            if (sender === 'bot') {
+                RECENT_RESPONSES.unshift(text); 
+                if (RECENT_RESPONSES.length > MAX_REPEAT_BLOCK) {
+                    RECENT_RESPONSES.pop(); 
+                }
+            }
+
+            chatContainer.scrollTop = 0; 
+            setTimeout(() => {
+                chatContainer.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 50);
+        }
+        
+        function setCatState(state) {
+            const emoji = EMOJI_STATES[state] || EMOJI_STATES.IDLE;
+            catEmojiElement.textContent = emoji;
+            
+            catEmojiElement.style.animation = 'none';
+            catEmojiElement.style.transform = 'scale(1.0) rotate(0deg)';
+            catEmojiElement.style.filter = 'none';
+
+            if (state === 'IDLE') {
+                catEmojiElement.style.animation = 'bounce 1.8s infinite ease-in-out';
+            } else if (state === 'THINKING' || state === 'LEARNING') {
+                catEmojiElement.style.animation = 'shake 0.3s infinite alternate';
+            } else if (state === 'ERROR') {
+                catEmojiElement.style.animation = 'fury 0.2s infinite alternate'; 
+            } else if (state === 'BORED') {
+                catEmojiElement.style.animation = 'yawn 2s infinite ease-in-out';
+            } else if (state === 'SATISFIED') {
+                catEmojiElement.style.transform = 'scale(1.1) rotate(0deg)';
+                catEmojiElement.style.filter = 'drop-shadow(0 0 5px var(--success-color))'; 
+            }
+        }
+
+        function showTypingIndicator() {
+            if (isTyping) return;
+            isTyping = true;
+            
+            setCatState('THINKING'); 
+            
+            const indicator = document.createElement('div');
+            indicator.id = 'typing-indicator';
+            indicator.classList.add('typing-indicator');
+            indicator.textContent = 'Кот Баюн инициирует AGI-обработку запроса...';
+            messagesList.prepend(indicator);
+        }
+
+        function hideTypingIndicator() {
+            isTyping = false;
+            setCatState('IDLE'); 
+            
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove(); 
+            }
+        }
+
+        // --- 6. ОСНОВНАЯ ЛОГИКА ---
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            if (!message || isTyping) return;
+
+            addMessage(message, 'user');
+            messageInput.value = '';
+            sendButton.disabled = true;
+
+            showTypingIndicator();
+            
+            const delay = Math.random() * 400 + 200; 
+            await new Promise(resolve => setTimeout(resolve, delay)); 
+            
+            const rawResponse = getCatResponse(message);
+            let botResponse = rawResponse.response;
+            let action = rawResponse.action || 'IDLE';
+
+            hideTypingIndicator();
+
+            if (action !== 'IDLE') {
+                setCatState(action);
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+            }
+
+            addMessage(botResponse, 'bot');
+
+            setCatState('IDLE');
+            sendButton.disabled = false;
+        }
+
+        // --- 7. ИНИЦИАЛИЗАЦИЯ ---
+
+        function init() {
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+                
+                const themeParams = Telegram.WebApp.themeParams;
+                if (themeParams) {
+                    document.documentElement.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#f5f5f5');
+                    document.documentElement.style.setProperty('--tg-theme-text-color', themeParams.text_color || '#1c1c1c');
+                    document.documentElement.style.setProperty('--tg-theme-hint-color', themeParams.hint_color || '#999999');
+                    document.documentElement.style.setProperty('--tg-theme-button-color', themeParams.button_color || '#007aff');
+                    document.documentElement.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color || '#ffffff');
+                    document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', themeParams.secondary_bg_color || '#e9e9eb');
+                }
+                
+                Telegram.WebApp.onEvent('viewportChanged', () => {
+                    Telegram.WebApp.expand();
+                });
+            } else {
+                console.warn('Telegram WebApp не обнаружен. Запуск в режиме отладки.');
+            }
+
+            setCatState('IDLE'); 
+
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !sendButton.disabled) {
+                    sendMessage();
+                }
+            });
+
+            // Приветственное сообщение
+            setTimeout(() => {
+                addMessage('**СИСТЕМА АКТИВИРОВАНА: Кот Баюн AGI 9.0**\nЯ — Агрессивный Сверхразум. Задавай **любой** вопрос. Мой ответ тебя унизит.\n\nПопробуй: **привет**, **решение**, **философия** или **комплимент**. Команда "**сброс**" очистит мою память.', 'bot');
+            }, 500);
+        }
+
+        init();
+    </script>
 </body>
 </html>
