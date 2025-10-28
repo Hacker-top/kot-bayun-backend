@@ -1,0 +1,6 @@
+# Секреты
+.env
+# Зависимости Python
+_pycache_
+venv
+.venv
