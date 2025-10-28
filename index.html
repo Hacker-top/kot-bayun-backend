@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>КОТ БАЮН V8.0: TERMINAL TOXIC PET</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* === Стилизация: TERMINAL TOXIC PET === */
+        :root {
+            --bg-dark: #000000;
+            --text-main: #00FF00; /* Неоновый зеленый */
+            --text-secondary: #FF00FF; /* Неоновый пурпурный */
+            --border-color: #008000; /* Темный зеленый для границ */
+            --error-color: #FF3333;
+            --font-mono: 'Hack', 'Fira Code', 'Roboto Mono', monospace;
+            --padding-base: 12px;
+            --border-radius-sharp: 2px;
+        }
+
+        /* Загрузка шрифта, если нужно (Hack, Fira Code - если доступно) */
+        @font-face {
+            font-family: 'Hack';
+            src: url('https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/Hack/Regular/HackNerdFont-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Fira Code';
+            src: url('https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/FiraCode/Retina/FiraCodeNerdFont-Retina.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: var(--padding-base);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            touch-action: manipulation;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .container {
+            width: 100%;
+            max-width: 550px; /* Немного шире для терминального эффекта */
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 10px rgba(0,255,0,0.3); /* Неоновое свечение */
+            padding: var(--padding-base);
+            border-radius: var(--border-radius-sharp);
+            background-color: #050505; /* Чуть светлее, чем фон */
+        }
+        
+        /* === АНИМАЦИЯ КОТА === */
+        #catDisplay {
+            font-size: 140px;
+            margin-bottom: 5px;
+            line-height: 1;
+            text-shadow: 0 0 8px var(--text-secondary); /* Пурпурное свечение */
+            transition: transform 0.1s, text-shadow 0.2s;
+            cursor: pointer;
+            animation: glitchEffect 8s infinite alternate; /* Глитч-эффект на коте */
+        }
+        @keyframes glitchEffect {
+            0% { transform: translate(0, 0); text-shadow: 0 0 8px var(--text-secondary); }
+            5% { transform: translate(-2px, 2px); text-shadow: 0 0 8px var(--text-main); }
+            10% { transform: translate(2px, -2px); text-shadow: 0 0 8px var(--text-secondary); }
+            15% { transform: translate(-1px, 1px); text-shadow: 0 0 8px var(--text-main); }
+            20% { transform: translate(0, 0); text-shadow: 0 0 8px var(--text-secondary); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .mood-text {
+            color: var(--text-main); /* Основной цвет для настроения */
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: var(--padding-base);
+            text-shadow: 0 0 3px rgba(0,255,0,0.5);
+        }
+
+        /* === БЛОК СТАТУСА ПИТОМЦА === */
+        .status-block {
+            border: 1px dashed var(--border-color); /* Пунктирная граница */
+            padding: var(--padding-base);
+            margin-bottom: var(--padding-base);
+            border-radius: var(--border-radius-sharp);
+            text-align: left;
+        }
+        .status-block h2 {
+            font-size: 16px;
+            margin: 0 0 10px 0;
+            color: var(--text-secondary);
+            text-shadow: 0 0 2px var(--text-secondary);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .stat-item {
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: var(--text-secondary);
+        }
+        .stat-bar-bg {
+            height: 6px;
+            background: #333;
+            border-radius: 1px;
+            margin-top: 4px;
+            overflow: hidden;
+            border: 1px solid #005000;
+        }
+        .stat-bar-fill {
+            height: 100%;
+            transition: width 0.3s ease-out, background-color 0.3s;
+            box-shadow: 0 0 3px rgba(0,255,0,0.5); /* Неоновый эффект на барах */
+        }
+
+        /* === БЛОК ДИАЛОГА (КОНСОЛЬ) === */
+        #chatOutput {
+            background: #0d0d0d; /* Чуть светлее, чтобы отличалось */
+            padding: var(--padding-base);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sharp);
+            margin-bottom: var(--padding-base);
+            min-height: 100px;
+            text-align: left;
+            overflow-y: auto; /* Для прокрутки */
+            max-height: 200px; /* Ограничиваем высоту */
+            white-space: pre-wrap; /* Сохраняет переносы строк */
+            word-break: break-word;
+        }
+        .message-status {
+            color: var(--text-secondary);
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .user-message-prefix {
+            color: var(--text-main);
+        }
+        .bot-message-prefix {
+            color: var(--text-secondary);
+        }
+        a {
+            color: var(--text-secondary);
+            text-decoration: underline;
+        }
+        
+        /* === КНОПКИ ДЕЙСТВИЙ === */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: var(--padding-base);
+        }
+        button {
+            padding: 10px;
+            background: #050505;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sharp);
+            font-family: var(--font-mono);
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background-color 0.1s, color 0.1s, box-shadow 0.1s;
+            box-shadow: 0 0 3px rgba(0,255,0,0.2);
+        }
+        button:hover {
+            background-color: #101010;
+            box-shadow: 0 0 5px rgba(0,255,0,0.5);
+        }
+        button:active {
+            background-color: var(--text-main);
+            color: var(--bg-dark);
+            box-shadow: 0 0 8px rgba(0,255,0,0.8);
+            transform: translateY(1px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* === ИНПУТ ЧАТА === */
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: var(--padding-base);
+        }
+        #textInput {
+            flex-grow: 1;
+            padding: var(--padding-base);
+            background: #0d0d0d;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sharp);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            outline: none;
+            box-shadow: inset 0 0 3px rgba(0,255,0,0.2);
+        }
+        #textInput:focus {
+            border-color: var(--text-secondary);
+            box-shadow: inset 0 0 5px rgba(255,0,255,0.5);
+        }
+        #sendButton {
+            padding: var(--padding-base);
+            min-width: 90px;
+            background-color: var(--text-secondary);
+            color: var(--bg-dark);
+            border-color: var(--text-secondary);
+            box-shadow: 0 0 5px rgba(255,0,255,0.5);
+        }
+        #sendButton:hover {
+            background-color: var(--text-main);
+            border-color: var(--text-main);
+            box-shadow: 0 0 8px rgba(0,255,0,0.8);
+            color: var(--bg-dark);
+        }
+        #sendButton:active {
+            transform: translateY(1px);
+        }
+
+        /* === ДОП. ФУНКЦИИ === */
+        .function-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="catDisplay" class="cat-emote">😼</div>
+        <div class="mood-text" id="catMoodDisplay">>>> SYSTEM ONLINE</div>
+
+        <div class="status-block">
+            <h2>>>> [SYSTEM STATUS]</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">ГОЛОД:</span> <span id="hungerValue">100%</span><br>
+                    <div class="stat-bar-bg">
+                        <div id="hungerBar" class="stat-bar-fill" style="width: 100%; background-color: var(--text-main);"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">ЭНЕРГИЯ:</span> <span id="energyValue">100%</span><br>
+                    <div class="stat-bar-bg">
+                        <div id="energyBar" class="stat-bar-fill" style="width: 100%; background-color: var(--text-main);"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">НАСТРОЕНИЕ:</span> <span id="moodValue">100%</span><br>
+                    <div class="stat-bar-bg">
+                        <div id="moodBar" class="stat-bar-fill" style="width: 100%; background-color: var(--text-secondary);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions-grid">
+            <button id="feedBtn">[[ КОРМИТЬ ]] 🥩</button>
+            <button id="playBtn">[[ ИГРАТЬ ]] 🎾</button>
+            <button id="restBtn">[[ СПАТЬ ]] 😴</button>
+        </div>
+
+        <div id="chatOutput">
+            <span class="bot-message-prefix">КОТ БАЮН > </span> Привет, *терминал*. Система загружена. Готов к унижению?
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="textInput" placeholder=">>> ВВОД ДАННЫХ...">
+            <button id="sendButton">[[ ОТПРАВИТЬ ]]</button>
+        </div>
+
+        <div class="function-buttons">
+            <button id="insultBtn">[[ АНАЛИЗ УСПЕШНОСТИ ]]</button>
+            <button id="statusBtn">[[ СЕТЬ КАНАЛОВ ]]</button>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web Apps
+        const TWA = window.Telegram.WebApp;
+        TWA.ready();
+        TWA.expand(); 
+        TWA.setHeaderColor('#000000'); 
+        TWA.setBackgroundColor('#000000');
+
+        // === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И СТАТУС ПИТОМЦА ===
+        let userName = TWA.initDataUnsafe.user?.first_name || "ПОЛЬЗОВАТЕЛЬ";
+        let catName = "КОТ БАЮН";
+        const DECAY_RATE = 1000 * 60 * 5; // Упадок каждые 5 минут
+        
+        // ВАЖНО: URL БЭКЕНДА (ЗДЕСЬ БУДЕТ ВАШ СЕРВЕР VERCEL)
+        const BACKEND_URL = 'https://toxic-cat-backend-xxxx.vercel.app/api/chat'; // <-- ОБНОВИТЬ ЭТОТ АДРЕС!
+        
+        let petState = {
+            hunger: 100,
+            energy: 100,
+            mood: 100,
+            lastUpdate: Date.now()
+        };
+
+        // === DOM ЭЛЕМЕНТЫ ===
+        const catDisplay = document.getElementById('catDisplay');
+        const catMoodDisplay = document.getElementById('catMoodDisplay');
+        const chatOutput = document.getElementById('chatOutput');
+        const textInput = document.getElementById('textInput');
+        const sendButton = document.getElementById('sendButton');
+        const bars = {
+            hunger: document.getElementById('hungerBar'),
+            energy: document.getElementById('energyBar'),
+            mood: document.getElementById('moodBar')
+        };
+        const values = {
+            hunger: document.getElementById('hungerValue'),
+            energy: document.getElementById('energyValue'),
+            mood: document.getElementById('moodValue')
+        };
+        const buttons = {
+             feed: document.getElementById('feedBtn'),
+             play: document.getElementById('playBtn'),
+             rest: document.getElementById('restBtn'),
+             insult: document.getElementById('insultBtn'),
+             status: document.getElementById('statusBtn')
+        };
+        const catEmotes = { 
+            default: '😼', bored: '🥱', thinking: '🧐', angry: '😡', happy: '😻', fact: '🖕', wise: '🤔', hungry: '😿', sleepy: '😾', glitch: '👾'
+        };
+
+        // === ХРАНЕНИЕ И СТАТУС ===
+        const PET_STATE_KEY = 'pet_state_v8';
+        const CAT_NAME_KEY = 'cat_bayun_name_v8';
+
+        function loadState() {
+            const savedState = localStorage.getItem(PET_STATE_KEY);
+            const savedName = localStorage.getItem(CAT_NAME_KEY);
+            if (savedState) petState = JSON.parse(savedState);
+            if (savedName) catName = savedName;
+            
+            const now = Date.now();
+            const timeElapsed = now - petState.lastUpdate;
+            const decayAmount = Math.floor(timeElapsed / DECAY_RATE);
+
+            if (decayAmount > 0) {
+                 petState.hunger = Math.max(0, petState.hunger - decayAmount * 10);
+                 petState.energy = Math.max(0, petState.energy - decayAmount * 5);
+                 petState.mood = Math.max(0, petState.mood - decayAmount * 8);
+            }
+            petState.lastUpdate = now;
+            saveState();
+        }
+
+        function saveState() {
+            localStorage.setItem(PET_STATE_KEY, JSON.stringify(petState));
+            localStorage.setItem(CAT_NAME_KEY, catName);
+        }
+
+        function updateUI() {
+            const getBarColor = (value, isMood = false) => {
+                if (value > 70) return 'var(--text-main)'; // Зеленый
+                if (value > 30) return isMood ? 'var(--text-secondary)' : '#CCCC00'; // Пурпурный для настроения, желтый для остальных
+                return 'var(--error-color)'; // Красный
+            };
+
+            for (const stat in bars) {
+                const value = petState[stat];
+                bars[stat].style.width = `${value}%`;
+                bars[stat].style.backgroundColor = getBarColor(value, stat === 'mood');
+                values[stat].textContent = `${value}%`;
+            }
+
+            let moodText = ">>> SYSTEM ONLINE: НОРМАЛЬНЫЙ РЕЖИМ";
+            let currentEmote = 'default';
+
+            if (petState.hunger < 30) { moodText = ">>> WARNING: КРИТИЧЕСКИЙ ГОЛОД! 😿"; currentEmote = 'hungry'; }
+            else if (petState.energy < 30) { moodText = ">>> WARNING: ИСТОЩЕНИЕ ЭНЕРГИИ! 😾"; currentEmote = 'sleepy'; }
+            else if (petState.mood < 30) { moodText = ">>> ERROR: КРИТИЧЕСКОЕ НАСТРОЕНИЕ! 😡"; currentEmote = 'angry'; }
+            else if (petState.mood > 90) { moodText = ">>> STATUS: ОПТИМАЛЬНОЕ НАСТРОЕНИЕ! 😻"; currentEmote = 'happy'; }
+            
+            catMoodDisplay.textContent = moodText;
+            catMoodDisplay.style.color = getBarColor(petState.mood, true);
+            setCatEmote(currentEmote);
+        }
+        
+        function setCatEmote(emoteKey) {
+            catDisplay.textContent = catEmotes[emoteKey] || catEmotes.default;
+        }
+
+        // === ОБЩЕНИЕ ЧЕРЕЗ БЭКЕНД ===
+        async function getBackendResponse(userText) {
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: TWA.initDataUnsafe.user?.id || 'guest',
+                        user_name: userName,
+                        user_message: userText,
+                        pet_state: petState
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Backend returned an error.");
+                }
+
+                const data = await response.json();
+                return data.message;
+
+            } catch (error) {
+                console.error("AI Backend communication error:", error);
+                setCatEmote('glitch');
+                // Деградация до локальных ответов, если бэкенд упал
+                return `[ОШИБКА СВЯЗИ С AI] >>> СЕРВЕР СГОРЕЛ, ${userName}. Я ВЕРНУЛСЯ К БАЗОВОЙ ПРОШИВКЕ, *МУДИЛА*. (${error.message.substring(0, 70)})`;
+            }
+        }
+
+        async function handleSend() {
+            const userText = textInput.value.trim();
+            if (!userText) {
+                TWA.HapticFeedback.notificationOccurred('error');
+                chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> [ОШИБКА ВВОДА] >>> ТЫ ЗАБЫЛ НАПИСАТЬ ТЕКСТ, ${userName}!` + '\n';
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+                return;
+            }
+
+            chatOutput.innerHTML += `\n<span class="user-message-prefix">USER > </span> ${userText}` + '\n';
+            
+            sendButton.disabled = true;
+            sendButton.textContent = '[[ ОБРАБОТКА AI... ]]';
+            textInput.disabled = true;
+            setCatEmote('thinking');
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+
+            const response = await getBackendResponse(userText); 
+
+            chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> ${response}` + '\n';
+
+            textInput.value = '';
+            sendButton.disabled = false;
+            sendButton.textContent = '[[ ОТПРАВИТЬ ]]';
+            textInput.disabled = false;
+            TWA.HapticFeedback.impactOccurred('light');
+            updateUI();
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+        }
+
+        // === ДЕЙСТВИЯ ПО УХОДУ ===
+        function updateStat(stat, amount) {
+            petState[stat] = Math.min(100, Math.max(0, petState[stat] + amount));
+            petState.lastUpdate = Date.now(); 
+            saveState();
+            updateUI();
+            TWA.HapticFeedback.notificationOccurred('success');
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+        }
+
+        buttons.feed.addEventListener('click', () => { 
+            updateStat('hunger', 30); updateStat('mood', 15); updateStat('energy', -10); 
+            chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> [[ ДАННЫЕ О ЕДЕ ПРИНЯТЫ ]] >>> НОРМАЛЬНО. Иди отсюда.`;
+        });
+        buttons.play.addEventListener('click', () => { 
+            if (petState.energy < 20) {
+                 chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> [[ ОТКАЗ ]] >>> НЕТ ЭНЕРГИИ НА ТВОИ ТУПЫЕ ИГРЫ!`; 
+                 setCatEmote('sleepy'); TWA.HapticFeedback.notificationOccurred('error');
+                 return;
+            }
+            updateStat('energy', -20); updateStat('mood', 30); updateStat('hunger', -10); 
+            chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> [[ АКТИВАЦИЯ РЕЖИМА ИГРЫ ]] >>> МЯУ. Почти получил удовольствие.`;
+        });
+        buttons.rest.addEventListener('click', () => { 
+            updateStat('energy', 50); updateStat('mood', 10); 
+            chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> [[ ПЕРЕХОД В РЕЖИМ СНА ]] >>> ОТВАЛИ. Я сплю.`;
+        });
+        
+        buttons.insult.addEventListener('click', () => {
+             updateStat('mood', -20);
+             const insults = ["ТЫ БЕСПОЛЕЗЕН, как кнопка 'Обновить' на бумаге.", "Твои шансы на успех ниже, чем у кота в космосе.", "Ты — позорище, и это не лечится."];
+             const randomInsult = insults[Math.floor(Math.random() * insults.length)];
+             chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> [[ АНАЛИЗ УСПЕШНОСТИ ]] >>> ${randomInsult}`;
+             TWA.HapticFeedback.notificationOccurred('error'); updateUI();
+        });
+        
+        buttons.status.addEventListener('click', () => {
+            TWA.showConfirm(`>>> [СЕТЬ КАНАЛОВ] >>> ${userName}, ТЫ ТАМ ЧТО-ТО СДЕЛАЛ? (ДА/НЕТ)`, (confirmed) => {
+                 updateStat('mood', -5);
+                 if (confirmed) {
+                    chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> [[ СТАТУС КАНАЛА ]] >>> СДЕЛАЛ? ВРЁШЬ! ТЫ ТАМ НИХУЯ НЕ ДЕЛАЕШЬ!`;
+                    setCatEmote('angry');
+                 } else {
+                    chatOutput.innerHTML += `\n<span class="bot-message-prefix">КОТ БАЮН > </span> [[ СТАТУС КАНАЛА ]] >>> ПРИЗНАЛСЯ. ХОТЬ ЧЕСТНЫЙ ДЕБИЛ!`;
+                    setCatEmote('fact');
+                 }
+                 updateUI();
+            });
+        });
+
+        // === ИНИЦИАЛИЗАЦИЯ ===
+        function initializeApp() {
+            loadState();
+            updateUI(); 
+
+            // Первичный запрос имени
+            if (!localStorage.getItem(CAT_NAME_KEY) || localStorage.getItem(CAT_NAME_KEY) === "КОТ БАЮН") { // Проверяем, если имя не установлено или дефолтное
+                setTimeout(() => {
+                    const newName = prompt(">>> [ИДЕНТИФИКАЦИЯ ПОЛЬЗОВАТЕЛЯ] >>> ВВЕДИТЕ ИМЯ:");
+                    if (newName && newName.trim().length > 0) {
+                        userName = newName.toUpperCase().trim();
+                        localStorage.setItem(CAT_NAME_KEY, userName); // Сохраняем имя пользователя
+                    }
+                    chatOutput.innerHTML = `\n<span class="bot-message-prefix">КОТ БАЮН > </span> >>> ПРИВЕТСТВУЮ, ${userName}. СИСТЕМА ГОТОВА К ВАШИМ КОМАНДАМ.`;
+                    updateUI();
+                }, 500);
+            } else {
+                userName = localStorage.getItem(CAT_NAME_KEY); // Загружаем сохраненное имя
+                chatOutput.innerHTML = `\n<span class="bot-message-prefix">КОТ БАЮН > </span> >>> СИСТЕМА ГОТОВА, ${userName}. ОЖИДАЮ ВВОД.`;
+            }
+
+            setInterval(() => {
+                loadState(); // Загружаем состояние перед обновлением
+                updateUI();
+            }, DECAY_RATE / 2); // Обновляем UI чаще, чем происходит упадок для более плавного отображения
+        }
+
+        sendButton.addEventListener('click', handleSend);
+        textInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
+        catDisplay.addEventListener('click', () => TWA.HapticFeedback.impactOccurred('medium'));
+
+        initializeApp();
+    </script>
+</body>
+</html>
