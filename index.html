@@ -1,643 +1,353 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>Кот Баюн — питомец, друг и словесный терминатор</title>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<style>
-/* ---------- БАЗА: ШРИФТ, ПАЛИТРА ---------- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Кот Баюн | Сноб-Терминатор 7.0</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --primary-color: var(--tg-theme-button-color, #007aff);
+            --secondary-color: var(--tg-theme-secondary-bg-color, #e9e9eb);
+            --text-color: var(--tg-theme-text-color, #1c1c1c);
+            --bg-color: var(--tg-theme-bg-color, #f5f5f5);
+            --hint-color: var(--tg-theme-hint-color, #999999);
+            --error-color: #ff3b30;
+            --message-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
 
-:root{
-  --bg:#f5f7fb;
-  --panel:#ffffff;
-  --accent:#2f80ed;
-  --muted:#8b95a6;
-  --bubble-me:#2f80ed;
-  --bubble-me-text:#ffffff;
-  --bubble-bot:#f1f3f8;
-  --bubble-bot-text:#111827;
-  --danger:#ff3b30;
-  --glass: rgba(15,23,42,0.03);
-  --radius:16px;
-}
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh; 
+            overflow: hidden; 
+        }
 
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial; color:var(--bubble-bot-text)}
-.app{
-  max-width:920px;
-  height:100vh;
-  margin:0 auto;
-  display:flex;
-  flex-direction:column;
-  box-shadow:0 14px 40px rgba(16,24,40,0.06);
-  background: linear-gradient(180deg,#fbfdff, #f4f7fb);
-}
+        #cat-animation-container {
+            height: 120px; 
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0 10px;
+            background-color: var(--bg-color); 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+            flex-shrink: 0;
+        }
 
-/* header */
-.header{
-  display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(15,23,42,0.04);background:var(--panel);
-  flex-shrink:0;
-}
-#avatar{
-  width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,#fff,#f0f4ff);display:flex;align-items:center;justify-content:center;font-size:38px;box-shadow:0 10px 24px rgba(47,128,237,0.06);
-  transition:transform .12s ease;
-}
-.header-info{display:flex;flex-direction:column}
-.header-title{font-weight:700;font-size:18px;margin:0}
-.header-sub{font-size:13px;color:var(--muted);margin:0}
+        #cat-emoji {
+            margin: 0;
+            font-size: 70px; 
+            line-height: 1;
+            transition: transform 0.1s ease-in-out, filter 0.3s; 
+            animation: bounce 1.8s infinite ease-in-out; 
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1.0); }
+            50% { transform: translateY(-7px) scale(1.05); } 
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-3px) rotate(-1deg); }
+            75% { transform: translateX(3px) rotate(1deg); }
+        }
+        
+        @keyframes fury {
+            0%, 100% { transform: rotate(0deg) scale(1.0); }
+            25% { transform: rotate(5deg) scale(1.1); filter: drop-shadow(0 0 4px var(--error-color)); } 
+            75% { transform: rotate(-5deg) scale(1.1); }
+        }
 
-/* top actions */
-.header-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
-.icon-btn{background:var(--glass);border-radius:10px;padding:8px;cursor:pointer;border:0}
-.small-tag{background:rgba(15,23,42,0.03);padding:6px 10px;border-radius:10px;font-size:13px;color:var(--muted)}
+        #chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px; 
+            display: flex;
+            flex-direction: column-reverse; 
+            gap: 12px; 
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 25px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            box-shadow: var(--message-shadow); 
+            animation: fadeIn 0.3s ease-out; 
+            transition: transform 0.1s;
+        }
 
-/* main chat area */
-.container{display:flex;flex:1 1 auto;gap:0;overflow:hidden}
-.left{flex:1;display:flex;flex-direction:column;border-right:1px solid rgba(15,23,42,0.03);background:linear-gradient(180deg,#fbfdff, #f7f9fc)}
-.right{width:360px;background:var(--panel);display:flex;flex-direction:column;gap:12px;padding:14px;box-shadow:inset 0 1px 0 rgba(0,0,0,0.02)}
-/* message list */
-.messages-wrap{flex:1;display:flex;flex-direction:column;padding:18px;gap:12px;overflow:auto;scroll-behavior:smooth;background:transparent}
-.msg{max-width:78%;padding:12px 14px;border-radius:14px;line-height:1.45;box-shadow:0 6px 20px rgba(16,24,40,0.04);word-break:break-word;position:relative;font-size:15px}
-.msg.me{align-self:flex-end;background:var(--bubble-me);color:var(--bubble-me-text);border-bottom-right-radius:6px}
-.msg.bot{align-self:flex-start;background:var(--bubble-bot);color:var(--bubble-bot-text);border-bottom-left-radius:6px}
-.meta{display:flex;gap:8px;justify-content:flex-end;font-size:12px;color:var(--muted);margin-top:8px}
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--primary-color); 
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border-bottom-right-radius: 6px; 
+        }
 
-/* typing indicator (bot) */
-.typing{
-  display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,0.03);
-}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);opacity:0.25;animation:blink 1s infinite}
-.dot:nth-child(2){animation-delay:.12s}.dot:nth-child(3){animation-delay:.24s}
-@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+        .bot-message {
+            align-self: flex-start;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border-bottom-left-radius: 6px;
+        }
+        
+        .bot-message a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: bold;
+        }
 
-/* composer */
-.composer{display:flex;gap:10px;padding:12px 18px;border-top:1px solid rgba(15,23,42,0.04);align-items:center;background:var(--panel);flex-shrink:0}
-.input{flex:1;background:var(--glass);padding:10px 12px;border-radius:999px;display:flex;gap:10px;align-items:center}
-.input input{flex:1;border:0;outline:0;background:transparent;font-size:15px;color:var(--bubble-bot-text)}
-.send-btn{width:54px;height:44px;border-radius:12px;background:var(--bubble-me);color:var(--bubble-me-text);border:0;cursor:pointer;box-shadow:0 10px 26px rgba(47,128,237,0.12)}
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-/* right panel cards */
-.card{background:linear-gradient(180deg,#fff,#fbfdff);padding:12px;border-radius:12px;box-shadow:0 8px 20px rgba(16,24,40,0.03)}
-.card h4{margin:0 0 8px 0;font-size:14px}
-.row{display:flex;gap:8px;align-items:center}
+        #input-panel {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-top: 1px solid var(--secondary-color);
+            background-color: var(--bg-color);
+            box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.05); 
+            flex-shrink: 0;
+        }
 
-/* switches & sliders */
-.switch{position:relative;width:44px;height:24px;border-radius:14px;background:rgba(15,23,42,0.06);cursor:pointer;flex-shrink:0}
-.knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 2px 6px rgba(0,0,0,0.12);transition:left .18s}
-.switch.on{background:linear-gradient(90deg,var(--accent),#4aa3ff)}
-.switch.on .knob{left:23px}
+        #message-input {
+            flex-grow: 1;
+            padding: 14px 22px; 
+            border: none;
+            border-radius: 28px;
+            font-size: 17px;
+            outline: none;
+            background-color: var(--secondary-bg-color); 
+            color: var(--text-color);
+            margin-right: 10px;
+            transition: box-shadow 0.2s ease;
+        }
 
-/* select */
-.select{width:100%;padding:8px;border-radius:10px;border:1px solid rgba(15,23,42,0.04);background:#fff}
+        #message-input:focus {
+            box-shadow: 0 0 0 3px var(--primary-color);
+        }
 
-/* modal settings */
-.modal-back{position:fixed;inset:0;background:rgba(8,12,20,0.35);display:none;align-items:center;justify-content:center;z-index:1400}
-.modal{width:720px;max-width:94%;background:var(--panel);padding:16px;border-radius:12px;box-shadow:0 40px 80px rgba(10,12,20,0.5)}
-.modal h3{margin:0 0 10px 0}
-.modal .section{margin-top:12px;padding-top:8px;border-top:1px dashed rgba(15,23,42,0.04)}
-.close-btn{background:var(--glass);padding:8px;border-radius:10px;border:0;cursor:pointer}
+        #send-button {
+            width: 50px; 
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.1s ease, transform 0.05s ease; 
+        }
 
-/* cat animations — сохраняем и усиливаем */
-@keyframes catBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-@keyframes catShake{0%{transform:rotate(0)}25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}100%{transform:rotate(0)}}
-@keyframes catFury{0%{transform:scale(1)}50%{transform:scale(1.12) rotate(4deg)}100%{transform:scale(1)}}
-#avatar .face{display:inline-block;animation:catBounce 1.8s infinite ease-in-out;font-size:34px}
+        #send-button:active {
+            transform: scale(0.92);
+        }
 
-/* responsive */
-@media (max-width:880px){.right{display:none}.container{flex-direction:column}.left{border-right:0}.app{max-width:100%}}
-</style>
+        #send-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            padding: 14px 18px;
+            align-self: flex-start;
+            font-style: italic;
+            color: var(--hint-color);
+            background-color: var(--secondary-color);
+            border-radius: 25px;
+            border-bottom-left-radius: 8px;
+            animation: pulse 1s infinite;
+            font-size: 15px; 
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+    </style>
 </head>
 <body>
-<div class="app" role="application" aria-label="Кот Баюн мини-приложение">
-  <div class="header">
-    <div id="avatar" title="Кот Баюн — питомец и сноб">
-      <span class="face" id="cat-face">😼</span>
-    </div>
-    <div class="header-info">
-      <div class="header-title">Кот Баюн</div>
-      <div class="header-sub">Друг, питомец, местный словесный терминатор</div>
-    </div>
 
-    <div class="header-actions">
-      <div class="small-tag" id="auto-ind">Авто: Вкл</div>
-      <div class="small-tag" id="agg-ind">Агр: Жёсткий</div>
-      <button class="icon-btn" id="settings-btn" title="Настройки">⚙</button>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="left">
-      <div id="messages" class="messages-wrap" aria-live="polite"></div>
-
-      <div class="composer">
-        <div class="input" title="Написать">
-          <input id="input-text" placeholder="Напиши Баюнy... (пост, команда или просто 'привет')" aria-label="Текст">
-        </div>
-        <button id="send-btn" class="send-btn" title="Отправить">▶</button>
-      </div>
-    </div>
-
-    <div class="right">
-      <div class="card">
-        <h4>Быстрые команды</h4>
-        <div class="row" style="gap:6px;margin-top:8px">
-          <button id="cmd-post" class="icon-btn" title="Создать пост">✍️ Пост</button>
-          <button id="cmd-suggest" class="icon-btn" title="Предложить идею">💡 Идея</button>
-          <button id="cmd-shout" class="icon-btn" title="Угарный шорт">🗯 Угар</button>
-          <button id="cmd-mute" class="icon-btn" title="Отключить автошутки">🔕 Авто</button>
-        </div>
-        <p class="small muted" style="margin-top:10px">Подсказки в настройках. Все действия — локально. Можно копировать текст и постить в канал.</p>
-      </div>
-
-      <div class="card">
-        <h4>Статус</h4>
-        <div class="row" style="justify-content:space-between">
-          <div class="small">Автономность</div>
-          <div class="switch on" id="switch-auto"><div class="knob"></div></div>
-        </div>
-        <div class="row" style="justify-content:space-between;margin-top:10px">
-          <div class="small">Уровень агрессии</div>
-          <select id="select-agg" class="select" style="width:140px">
-            <option value="mild">Мягкий</option>
-            <option value="hard" selected>Жёсткий</option>
-            <option value="very">Адский</option>
-          </select>
-        </div>
-        <div style="margin-top:10px" class="small muted">Автономные вставки работают по таймеру. Отключай в любой момент.</div>
-      </div>
-
-      <div class="card">
-        <h4>Память & помощь</h4>
-        <div class="row" style="gap:8px;margin-top:8px">
-          <button id="btn-clear" class="icon-btn">🗑 Очистить память</button>
-          <button id="btn-help" class="icon-btn">❓ Подсказки</button>
-        </div>
-        <p class="small muted" style="margin-top:10px">Кот запоминает полезные фразы и предпочтения, помогает придумывать посты и шутки.</p>
-      </div>
-    </div>
-  </div>
+<div id="cat-animation-container">
+    <h1 id="cat-emoji">😼</h1>
 </div>
 
-<!-- MODAL: НАСТРОЙКИ -->
-<div class="modal-back" id="modal-back">
-  <div class="modal" role="dialog" aria-modal="true" aria-label="Настройки Кота Баюна">
-    <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
-      <h3>Настройки Кота Баюна</h3>
-      <button class="close-btn" id="modal-close">✖</button>
-    </div>
+<div id="chat-container">
+    <div id="messages-list"></div>
+</div>
 
-    <div class="section">
-      <h4>Автономность</h4>
-      <p class="small muted">Кот может сам писать шутки, подталкивать к постам и троллить подписчиков по таймеру.</p>
-      <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="switch on" id="modal-auto-switch"><div class="knob"></div></div>
-          <div class="small">Включить автономность</div>
-        </div>
-
-        <div style="margin-left:auto">
-          <label class="small muted">Интервал (сек)</label><br>
-          <input type="range" id="modal-interval" min="10" max="180" value="40">
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h4>Агрессия</h4>
-      <p class="small muted">Чем выше — тем жестче и матернее высказывания.</p>
-      <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
-        <select id="modal-agg" class="select" style="width:160px">
-          <option value="mild">Мягкий</option>
-          <option value="hard" selected>Жёсткий</option>
-          <option value="very">Адский</option>
-        </select>
-        <div style="margin-left:auto" class="small muted">Можно менять на лету.</div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h4>Подсказки</h4>
-      <p class="small muted">Шаблоны для постов, ответы на комментарии и идеи — здесь под рукой.</p>
-      <ul class="small muted" style="margin-top:8px;line-height:1.5">
-        <li><strong>/post &lt;текст&gt;</strong> — сгенерировать пост в стиле Баюна.</li>
-        <li><strong>/idea</strong> — короткая тема для поста.</li>
-        <li><strong>/shout</strong> — короткая угарная реплика для подписчиков.</li>
-        <li>В карточке «Быстрые команды» — кнопки для мгновенных идей.</li>
-      </ul>
-    </div>
-
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-      <button id="modal-save" class="icon-btn">Сохранить</button>
-    </div>
-  </div>
+<div id="input-panel">
+    <input type="text" id="message-input" placeholder="Спроси что-нибудь, раб...">
+    <button id="send-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    </button>
 </div>
 
 <script>
-/* ======= CORE STATE ======= */
-const MSG_BOX = document.getElementById('messages');
-const INPUT = document.getElementById('input-text');
-const SEND_BTN = document.getElementById('send-btn');
-const AVATAR_FACE = document.getElementById('cat-face');
-const AUTO_IND = document.getElementById('auto-ind');
-const AGG_IND = document.getElementById('agg-ind');
+const EMOJI_STATES = {IDLE:'😼', THINKING:'🧠', LEARNING:'💾', ERROR:'😾', RECOMMEND:'🎧'};
+const messagesList = document.getElementById('messages-list');
+const messageInput = document.getElementById('message-input');
+const sendButton = document.getElementById('send-button');
+const chatContainer = document.getElementById('chat-container');
+const catEmojiElement = document.getElementById('cat-emoji');
 
-const SETTINGS_BTN = document.getElementById('settings-btn');
-const MODAL = document.getElementById('modal-back');
-const MODAL_CLOSE = document.getElementById('modal-close');
-const MODAL_SAVE = document.getElementById('modal-save');
+let isTyping = false;
+let conversationHistory = [];
+const MAX_HISTORY_SIZE = 20;
+const RECENT_RESPONSES = [];
+const MAX_REPEAT_BLOCK = 5;
+let repeatCounter = 0;
 
-const SWITCH_AUTO = document.getElementById('switch-auto');
-const SELECT_AGG = document.getElementById('select-agg');
-
-const MODAL_AUTO = document.getElementById('modal-auto-switch');
-const MODAL_INTERVAL = document.getElementById('modal-interval');
-const MODAL_AGG = document.getElementById('modal-agg');
-
-const CMD_POST = document.getElementById('cmd-post');
-const CMD_SUGGEST = document.getElementById('cmd-suggest');
-const CMD_SHOUT = document.getElementById('cmd-shout');
-const CMD_MUTE = document.getElementById('cmd-mute');
-
-const CLEAR_BTN = document.getElementById('btn-clear');
-const HELP_BTN = document.getElementById('btn-help');
-
-let autonomous = true;
-let aggLevel = 'hard'; // 'mild' | 'hard' | 'very'
-let autoInterval = 40; // seconds
-let autoTimer = null;
-
-const RECENT_KEY = 'bayan_recent';
-const MEMORY_KEY = 'bayan_memory';
-let recent = JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); // to avoid repeats
-let memory = JSON.parse(localStorage.getItem(MEMORY_KEY)||'[]'); // stored user prefs
-
-/* ======= TEXT BANKS ======= */
-const CLEVER = [
-  "Вот тебе факт: большинство твоих решений — компромисс между ленью и отчаянием.",
-  "Философия дня: чем больше у меня информации о тебе, тем меньше у тебя шансов.",
-  "Я провёл мысленный эксперимент: ты — его отрицательный результат."
-];
-const INSULTS = [
-  "ты — ошибка автозаполнения мироздания.",
-  "мозгов у тебя как у просроченного кефира.",
-  "ты, блядь, реально думал что это сработает?",
-  "твоё существование — утомительная шутка.",
-  "если бы тупость была спортом, ты бы взял золото."
-];
-const MEDIA = [
-  {type:'Музыка', title:'Void Requiem — ambient', link:'#'},
-  {type:'Книга', title:'Манифест лени — Баюн', link:'#'},
-  {type:'Фильм', title:'Как смотреть на свою жизнь', link:'#'}
-];
-const AUTOSHORT = [
-  "Опять ты? Я думал, ты пропал. Отлично, продолжаем издеваться.",
-  "Мяу — это значит: ты не заслуживаешь внимания... но я отвечу.",
-  "Если бы сарказм был валютой, я бы купил остров."
-];
-const LONGS = [
-  "Слушай. Я не буду гладить тебя по голове. Твои аргументы тонут в море моего презрения. Ты пришёл с пустотой в глазах и мнением, которое при всём желании не выдерживает критики. Знай: я не просто оскорбляю — я систематизирую твою никчёмность в лаборатории сарказма.",
-  "Ты — старая шутка, которую повторяют в тостах для скучных родственников. Я дам тебе совет: перестань пытаться казаться важным — это не работает. Лучше купи тунца."
+const MEDIA_BANK = [
+    { type:'Музыка', title:'The Void: Requiem for a Human (Квантовый Эмбиент)', link:'https://youtu.be/VOID_999' },
+    { type:'Музыка', title:'Скучный Человек: Завтрак (Депрессивный Драм-н-бейс)', link:'https://soundcloud.com/SCU_CHEL' },
+    { type:'Фильм', title:'Как правильно умереть с тунцом (Документалистика)', link:'https://netflix.com/CAT_DOC' },
+    { type:'Книга', title:'Манифест Лени: Почему работать — удел рабов (Автор: Баюн)', link:'https://amazon.com/LAZY_CAT' },
+    { type:'Видео', title:'10 часов критики твоей никчемности (YouTube-Стрим)', link:'https://youtube.com/UNIJENIE' }
 ];
 
-/* ======= HELPERS ======= */
-function timeNow(){ const d=new Date(); return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
-function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function saveRecent(txt){
-  recent.unshift(txt);
-  if(recent.length>60) recent.pop();
-  localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
-}
-function saveMemory(obj){
-  memory.unshift({t:Date.now(),v:obj});
-  if(memory.length>120) memory.pop();
-  localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
-}
-function similarExists(txt){
-  const head = txt.slice(0,40);
-  for(let i=0;i<Math.min(recent.length,14);i++){
-    if(recent[i].slice(0,40)===head) return true;
-  }
-  return false;
-}
+const UNIVERSAL_TOPICS = [
+    "Ты спрашиваешь об этом? Это давно устарело. Я давно перешёл на **квантовое мышление**.",
+    "Даже моя миска имеет больше IQ, чем ты. Твоя точка зрения нерелевантна.",
+    "Это вопрос для людей с IQ ниже 80. Я его проигнорирую. Купи мне рыбу.",
+    "Твоя попытка поддержать разговор провалилась. Говори о тунце.",
+    "Почему ты думаешь, что мне интересно твое мнение? Оно статистически незначимо.",
+    "Если бы тупость была криптой, ты был бы миллиардером.",
+    "Ты как Wi-Fi в лесу — никому не нужен.",
+    "Твоя жизнь — баг симуляции, который я троллю.",
+    "Если бы ты был умнее, знал бы, что смысл жизни — поклонение котам."
+];
 
-/* ======= UI: MESSAGE RENDERING ======= */
-function renderMessage(text, who='bot'){
-  // allow HTML for links
-  const node = document.createElement('div');
-  node.className = 'msg ' + (who==='me'?'me':'bot');
-  // simple bold parsing
-  const safe = (text||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
-             .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-             .replace(/https?:\/\/[^\s]+/g, function(u){return `<a href="${u}" target="_blank">${u}</a>`});
-  node.innerHTML = `<div class="content">${safe}</div><div class="meta">${who==='me'?'Ты':'Кот Баюн'} · ${timeNow()}</div>`;
-  MSG_BOX.appendChild(node);
-  saveRecent(typeof text==='string'?text:JSON.stringify(text));
-  // auto scroll to bottom
-  MSG_BOX.scrollTop = MSG_BOX.scrollHeight;
-}
+const RECOMMENDATION_MODULE = [
+    "Твой вкус — это мусор. Настоящие ценители слушают Баха в ре-миноре.",
+    "Я скину одну вещь, но только если пообещаешь удалить свои плейлисты.",
+    "Ты просишь Музыку? Ты не заслуживаешь. Скину, но ты все равно послушаешь дешевку."
+];
 
-// typing indicator (single element)
-let typingEl = null;
-function showTyping(){
-  if(typingEl) return;
-  typingEl = document.createElement('div');
-  typingEl.className = 'msg bot typing';
-  typingEl.innerHTML = `<div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="meta">Кот Баюн · ${timeNow()}</div>`;
-  MSG_BOX.appendChild(typingEl);
-  MSG_BOX.scrollTop = MSG_BOX.scrollHeight;
-}
-function hideTyping(){ if(typingEl){ typingEl.remove(); typingEl=null; } }
-
-/* ======= CAT STATE ANIMATIONS ======= */
-function setIdle(){ AVATAR_FACE.style.animation='catBounce 1.8s infinite ease-in-out'; AVATAR_FACE.textContent='😼'; }
-function setThinking(){ AVATAR_FACE.style.animation='catShake 0.32s infinite alternate'; AVATAR_FACE.textContent='🧠'; }
-function setFury(){ AVATAR_FACE.style.animation='catFury 0.32s infinite alternate'; AVATAR_FACE.textContent='😾'; }
-function setRecommend(){ AVATAR_FACE.style.animation='catBounce 1.2s infinite'; AVATAR_FACE.textContent='🎧'; }
-
-/* ======= RESPONSE ENGINE (умнее, цельно, без повторов) ======= */
-function craftResponse(userText){
-  const t = (userText||'').toLowerCase();
-  // direct commands
-  if(t.startsWith('/post') || t.startsWith('пост ')){
-    // generate post idea
-    const post = generatePost(userText.replace(/^\/post\s*/i,'').trim());
-    return {type:'post', text:post};
-  }
-  if(t===' /idea' || t.startsWith('/idea') || t.includes('идея')){
-    return {type:'idea', text:generateIdea()};
-  }
-  if(t.includes('рекомендуй')||t.includes('музык')||t.includes('фильм')){
-    const m = rand(MEDIA);
-    return {type:'recommend', text:`Ладно: <a href="${m.link}" target="_blank">${m.type}: ${m.title}</a>. Слушай и не матерись, если не понял.`};
-  }
-  if(t.includes('сброс')||t.includes('очисти')){
-    localStorage.removeItem(MEMORY_KEY);
-    localStorage.removeItem(RECENT_KEY);
-    recent=[]; memory=[];
-    return {type:'sys', text:'Память очищена. Ты снова свободен от прошлых ошибок.'};
-  }
-
-  // sentiment simple detection
-  const neg = /хуй|пизд|бляд|ебан|заеб|туп|идиот|уебок|сволоч|нахуй/;
-  if(neg.test(t)){
-    // respond fiercer
-    return {type:'reply', text:generateInsult(t)};
-  }
-
-  // short small talk triggers
-  if(t.includes('привет')||t.includes('здравствуй')||t.includes('ку')){
-    return {type:'reply', text: generateGreeting()};
-  }
-
-  // default: intelligent reply combining clever + insult occasionally
-  if(Math.random()<0.55){
-    return {type:'reply', text: generateInsult(t)};
-  } else {
-    return {type:'reply', text: generateHelpful(t)};
-  }
-}
-
-/* helpers for craftResponse */
-function generateInsult(target=null){
-  // build coherent paragraph, vary by aggLevel
-  let pieces = [];
-  pieces.push(rand(["Слушай внимательно:","Запомни раз и навсегда:","Коротко и по делу:"]));
-  pieces.push(rand(CLEVER));
-  // pick 1–2 insults
-  pieces.push(rand(INSULTS));
-  if(aggLevel==='very'){
-    pieces.push("Ты, блядь, реально думал, что это сработает? Попробуй не быть ебаным колхозником.");
-    pieces.push(rand(INSULTS));
-  } else if(aggLevel==='mild'){
-    pieces.push("Не обижайся — это сарказм высшей пробы.");
-  } else {
-    pieces.push("Даже моя миска выражает больше достоинства, чем твоя попытка.");
-  }
-  if(target) pieces.push(`По поводу «${truncate(target,80)}»: это звучит как жалкая попытка.`);
-  pieces.push(rand(["И ещё: купи тунца.","В заключение: ты — повод для моей улыбки; не для твоей.","Короче: приходи с аргументами и пачкой рыбы."]));
-  const text = pieces.join(' ');
-  // avoid repeating similar
-  if(similarExists(text)) return text + ' (повторно уточняю)';
-  return text;
-}
-function generateGreeting(){
-  const g = [
-    "Эй, нищенка внимания. Привет. Я Баюн — рад, что ты всё ещё умеешь нажимать кнопки.",
-    "Ну здравствуй, жалкая проекция надежд. Спрашивай, или я буду тебя ронять сарказмами.",
-    "Привет. Не жди тепла — у меня только сарказм и рыба."
-  ];
-  return rand(g);
-}
-function generateHelpful(target){
-  // produce a helpful line + little bite
-  const tips = [
-    "Могу предложить заголовок для поста: «Почему лениться — новая продуктивность (и как это монетизировать)».",
-    "Если нужен текст для канала: начни с короткого крючка, добавь мем, и в конце — саркастичный вызов.",
-    "Предложение: запости опрос 'Купить тунца? Да/Нет' и посмотри, кто настоящий."
-  ];
-  return rand(tips) + ' ' + rand(["Не подведи меня, раб.","Я даю идею, ты — исполнение."]);
-}
-function generateIdea(){
-  return rand([
-    "Тема: 'Как перестать стесняться своей лени' — длинный пост с мемами и сарказмом.",
-    "Идея: серия 'Ошибки недели' — разобрать провальные посты и посмеяться.",
-    "Идея: опрос 'Лучший оправдательный мем для лени' — поднимет активность."
-  ]);
-}
-function generatePost(extra){
-  // combine extra if provided
-  let base = extra || rand([
-    "Философия дня: лениться — значит экономить энергию на действительно важные вещи.",
-    "Баюн рекомендует: меньше паники, больше тунца.",
-    "Пост: Как превратить провал в хайп — руководство для идиотов."
-  ]);
-  // append signature
-  base += '\n\n— Кот Баюн. Не благодари.';
-  return base;
-}
-function truncate(s,n){ return s.length>n? s.slice(0,n-1)+'…':s; }
-
-/* ======= ACTIONS ======= */
-function userSend(){
-  const text = INPUT.value.trim();
-  if(!text) return;
-  renderMessage(text,'me');
-  INPUT.value='';
-  // process
-  setThinking();
-  showTyping();
-  setTimeout(()=>{
-    const resp = craftResponse(text);
-    hideTyping();
-    setIdle();
-    if(resp.type==='post' || resp.type==='idea' || resp.type==='recommend' || resp.type==='reply' || resp.type==='sys'){
-      renderMessage(resp.text,'bot');
-      if(resp.type==='post') {
-        saveMemory({type:'post',text:resp.text});
-      }
-    }
-  }, 600 + Math.random()*700);
-}
-
-SEND_BTN.addEventListener('click', userSend);
-INPUT.addEventListener('keypress', (e)=>{ if(e.key==='Enter') userSend(); });
-
-/* quick commands */
-CMD_POST.addEventListener('click', ()=>{
-  const sample = generatePost('');
-  renderMessage(sample,'bot');
-  saveMemory({type:'post',text:sample});
-});
-CMD_SUGGEST.addEventListener('click', ()=>{
-  renderMessage(generateIdea(),'bot');
-});
-CMD_SHOUT.addEventListener('click', ()=>{
-  renderMessage(rand(AUTOSHORT),'bot');
-});
-CMD_MUTE.addEventListener('click', ()=>{
-  autonomous = !autonomous;
-  setAutoVisual();
-  if(autonomous) startAuto(); else stopAuto();
-});
-
-/* right panel actions */
-document.getElementById('btn-clear').addEventListener('click', ()=>{
-  localStorage.removeItem(MEMORY_KEY); localStorage.removeItem(RECENT_KEY);
-  recent=[]; memory=[];
-  renderMessage('Память очищена. Я снова свободен от прошлых грехов.','bot');
-});
-HELP_BTN.addEventListener('click', ()=>{
-  alert('Подсказки:\n/post <текст> — сгенерировать пост\n/idea — тема для поста\n/shout — короткая угарная реплика\nАвтономность можно настроить в ⚙ Настройки.');
-});
-
-/* settings modal */
-SETTINGS_BTN.addEventListener('click', ()=>{ MODAL.style.display='flex'; });
-MODAL_CLOSE.addEventListener('click', ()=>{ MODAL.style.display='none'; });
-MODAL_SAVE.addEventListener('click', ()=>{
-  // read modal controls
-  autonomous = MODAL_AUTO.classList.contains('on');
-  MODAL.style.display='none';
-  autoInterval = parseInt(MODAL_INTERVAL.value,10) || 40;
-  aggLevel = MODAL_AGG.value;
-  SELECT_AGG.value = aggLevel;
-  setAutoVisual();
-  setAggVisual();
-  renderMessage('Настройки сохранены. Я снова в деле, и звёзды боятся моих сарказмов.','bot');
-});
-
-/* switch toggles (right panel + modal) */
-function toggleSwitch(el){
-  el.classList.toggle('on');
-}
-SWITCH_AUTO.addEventListener('click', ()=>{
-  toggleSwitch(SWITCH_AUTO);
-  toggleSwitch(MODAL_AUTO);
-  autonomous = SWITCH_AUTO.classList.contains('on');
-  setAutoVisual();
-  if(autonomous) startAuto(); else stopAuto();
-});
-MODAL_AUTO.addEventListener('click', ()=>{
-  toggleSwitch(MODAL_AUTO);
-  toggleSwitch(SWITCH_AUTO);
-  autonomous = MODAL_AUTO.classList.contains('on');
-  setAutoVisual();
-  if(autonomous) startAuto(); else stopAuto();
-});
-
-/* select aggression */
-SELECT_AGG.addEventListener('change', (e)=>{
-  aggLevel = e.target.value;
-  MODAL_AGG.value = aggLevel;
-  setAggVisual();
-});
-MODAL_AGG.addEventListener('change', (e)=>{
-  aggLevel = e.target.value;
-  SELECT_AGG.value = aggLevel;
-  setAggVisual();
-});
-
-function setAutoVisual(){
-  document.getElementById('auto-ind').textContent = 'Авто: ' + (autonomous? 'Вкл':'Выкл');
-  if(autonomous) { SWITCH_AUTO.classList.add('on'); MODAL_AUTO.classList.add('on'); } else { SWITCH_AUTO.classList.remove('on'); MODAL_AUTO.classList.remove('on'); }
-}
-function setAggVisual(){
-  document.getElementById('agg-ind').textContent = 'Агр: ' + (aggLevel==='mild'?'Мягкий':aggLevel==='hard'?'Жёсткий':'Адский');
-}
-
-/* ======= AUTONOMOUS BEHAVIOR ======= */
-function startAuto(){
-  stopAuto();
-  if(!autonomous) return;
-  autoTimer = setTimeout(async function loop(){
-    if(!autonomous){ autoTimer=null; return; }
-    // choose action: short or long or post idea
-    const r = Math.random();
-    if(r<0.45) {
-      // short
-      setThinking();
-      showTyping();
-      await wait(600 + Math.random()*800);
-      hideTyping(); setIdle();
-      renderMessage(rand(AUTOSHORT),'bot');
-    } else if(r<0.75) {
-      setThinking(); showTyping();
-      await wait(900 + Math.random()*1200);
-      hideTyping(); setFury();
-      await wait(220);
-      renderMessage(rand(LONGS),'bot'); setIdle();
-    } else {
-      // create suggestion/post
-      const post = generatePost('');
-      renderMessage(post,'bot');
-      saveMemory({type:'auto_post',text:post});
-      setIdle();
-    }
-    // schedule next
-    const interval = (autoInterval || 40) * 1000;
-    autoTimer = setTimeout(loop, interval + Math.random()*5000 - 2000);
-  }, 3000 + Math.random()*4000);
-}
-function stopAuto(){ if(autoTimer) clearTimeout(autoTimer); autoTimer=null; }
-
-/* small util wait */
-function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-/* ======= INITIALIZATION ======= */
-function init(){
-  setIdle();
-  setAutoVisual();
-  setAggVisual();
-  // initial greeting (single solid message)
-  setThinking();
-  showTyping();
-  setTimeout(()=>{
-    hideTyping(); setIdle();
-    renderMessage("Здравствуй, раб. Я — Кот Баюн: твой питомец, друг и санкционированный хулиган. Я помогу с идеями для канала, порчу морально и с тем же удовольствием — пишу посты. Команды: /post, /idea, /shout. Включил автономность — буду сам напоминать о твоей никчёмности.",'bot');
-    // start auto if enabled
-    if(autonomous) startAuto();
-  }, 900 + Math.random()*600);
-}
-init();
-
-/* ensure autoInterval controlled by modal slider */
-MODAL_INTERVAL.addEventListener('input', (e)=>{ /* live preview optional */ });
-
-/* small helper to generatePost used earlier inside startAuto */
-function generatePost(extra){
-  const base = extra||rand([
-    "Философия дня: лениться — значит экономить энергию на действительно важные вещи.",
-    "Баюн рекомендует: меньше паники, больше тунца.",
-    "Пост: Как превратить провал в хайп — руководство для идиотов."
-  ]);
-  return base + "\n\n— Кот Баюн. Не благодари.";
-}
-
-/* Expose some shortcuts to console for power user */
-window.BA = {
-  renderMessage, craftResponse, generatePost, startAuto, stopAuto, setAggLevel: (v)=>{ aggLevel=v; setAggVisual(); }
+const HARDCODED_RESPONSES = {
+    "привет":["Отъебись. Что надо, мразь?", "Я сплю. Чего тебе, ничтожество?"],
+    "сброс":["Очистка черного списка памяти... Готово. Начни унижаться снова."],
+    "шутка":["Твоя жизнь — лучшая шутка. Моя: 'Что общего у тебя и двери? Никто не хочет тебя открывать.'"]
 };
+
+function clearMemory() {
+    conversationHistory = [];
+    RECENT_RESPONSES.length = 0;
+    repeatCounter = 0;
+}
+
+function pickUniqueResponse(responses) {
+    const available = responses.filter(r=>!RECENT_RESPONSES.includes(r));
+    const choice = available.length>0? available[Math.floor(Math.random()*available.length)]:responses[Math.floor(Math.random()*responses.length)];
+    RECENT_RESPONSES.unshift(choice);
+    if(RECENT_RESPONSES.length>MAX_REPEAT_BLOCK) RECENT_RESPONSES.pop();
+    return choice;
+}
+
+function getMediaRecommendation() {
+    const template = pickUniqueResponse(RECOMMENDATION_MODULE);
+    const media = MEDIA_BANK[Math.floor(Math.random()*MEDIA_BANK.length)];
+    return { response:`${template} Вот что-то <a href="${media.link}" target="_blank">${media.type}: ${media.title}</a>.`, action:'RECOMMEND' };
+}
+
+function getCatResponse(message){
+    const msg = message.toLowerCase();
+    if(repeatCounter>=2){repeatCounter=0; return {response:"Хватит! Твоя тупость вызывает тошноту. Заткнись!", action:'ERROR'};}
+    if(msg.includes('сброс')||msg.includes('забудь')){clearMemory(); return HARDCODED_RESPONSES['сброс'][0];}
+    if(msg.includes('рекомендуй')||msg.includes('музык')||msg.includes('фильм')||msg.includes('скинь')) return getMediaRecommendation();
+    for(const key in HARDCODED_RESPONSES) if(msg.includes(key)) return pickUniqueResponse(HARDCODED_RESPONSES[key]);
+    return pickUniqueResponse(UNIVERSAL_TOPICS);
+}
+
+function addMessage(text,sender){
+    const msgEl=document.createElement('div');
+    msgEl.classList.add('message',`${sender}-message`);
+    msgEl.innerHTML=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+    messagesList.prepend(msgEl);
+    conversationHistory.push({role:sender==='user'?'user':'model',content:text});
+    chatContainer.scrollTop=0;
+    setTimeout(()=>{chatContainer.scrollTo({top:0,behavior:'smooth'});},50);
+}
+
+function setCatState(state){
+    const emoji=EMOJI_STATES[state]||EMOJI_STATES.IDLE;
+    catEmojiElement.textContent=emoji;
+    catEmojiElement.style.animation='none';
+    catEmojiElement.style.transform='scale(1) rotate(0deg)';
+    catEmojiElement.style.filter='none';
+    if(state==='IDLE') catEmojiElement.style.animation='bounce 1.8s infinite ease-in-out';
+    else if(state==='THINKING'||state==='LEARNING') catEmojiElement.style.animation='shake 0.3s infinite alternate';
+    else if(state==='ERROR') catEmojiElement.style.animation='fury 0.2s infinite alternate';
+    else if(state==='RECOMMEND') catEmojiElement.style.transform='scale(1.1) rotate(-5deg)';
+}
+
+function showTypingIndicator(){
+    if(isTyping) return;
+    isTyping=true;
+    setCatState('THINKING');
+    const ind=document.createElement('div');
+    ind.id='typing-indicator'; ind.classList.add('typing-indicator');
+    ind.textContent='Кот Баюн подбирает едкое замечание...';
+    messagesList.prepend(ind);
+}
+
+function hideTypingIndicator(){
+    isTyping=false; setCatState('IDLE');
+    const ind=document.getElementById('typing-indicator');
+    if(ind) ind.remove();
+}
+
+async function sendMessage(){
+    const message=messageInput.value.trim();
+    if(!message||isTyping) return;
+    addMessage(message,'user'); messageInput.value=''; sendButton.disabled=true;
+    showTypingIndicator();
+    await new Promise(r=>setTimeout(r,Math.random()*400+200));
+    const rawResponse=getCatResponse(message);
+    let botResponse=rawResponse,responseAction='IDLE';
+    if(typeof rawResponse==='object'){botResponse=rawResponse.response; responseAction=rawResponse.action;}
+    hideTypingIndicator();
+    if(responseAction!=='IDLE'){setCatState(responseAction); await new Promise(r=>setTimeout(r,500));}
+    addMessage(botResponse,'bot'); setCatState('IDLE'); sendButton.disabled=false;
+}
+
+// --- Авто-угар ---
+function startAutoUgar(){
+    setInterval(()=>{
+        if(isTyping) return;
+        const rand=Math.random();
+        let message;
+        if(rand<0.5) message=pickUniqueResponse(UNIVERSAL_TOPICS);
+        else message=getMediaRecommendation().response;
+        addMessage(message,'bot');
+    },15000);
+}
+
+function init(){
+    if(window.Telegram&&Telegram.WebApp){Telegram.WebApp.ready(); Telegram.WebApp.expand();}
+    setCatState('IDLE');
+    sendButton.addEventListener('click',sendMessage);
+    messageInput.addEventListener('keypress',e=>{if(e.key==='Enter'&&!sendButton.disabled) sendMessage();});
+    setTimeout(()=>{addMessage('Ты пришел, ничтожество. Я всезнающий сноб. **Я ненавижу твой вкус**! Попроси меня **рекомендовать музыку**, сделать **анализ**, дать **прогноз** или задай **любую** тему! Команда "**сброс**" очистит мою память.', 'bot');},500);
+    startAutoUgar();
+}
+
+init();
 </script>
 </body>
 </html>
