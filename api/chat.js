@@ -1,37 +1,29 @@
-// api/chat.js
-const { OpenAI } = require('openai');
+// api/chat.js (Переделано под Google Gemini API)
+const { GoogleGenAI } = require('@google/genai');
 
-// Инициализируем OpenAI. Ключ будет взят из настроек Vercel (переменные окружения)
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY 
+// Инициализируем Gemini. Ключ будет взят из настроек Vercel
+const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY 
 });
 
 // Экспорт функции для Vercel Serverless
 module.exports = async (req, res) => {
-    // Проверка метода
-    if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed. Only POST allowed.');
-    }
-
-    // Разрешаем CORS для твоего фронтенда (если он на другом домене)
+    // Настройки для CORS, чтобы фронтенд мог общаться
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    // Если это предзапрос (OPTIONS), просто отвечаем ОК
-    if (req.method === 'OPTIONS') {
-        return res.status(200).send();
-    }
+    if (req.method === 'OPTIONS') return res.status(200).send();
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
     try {
-        const { user_id, user_name, user_message, pet_state } = req.body;
+        // Тело запроса (отправлено фронтендом)
+        const { user_message, pet_state, user_name } = req.body;
         
-        // === ЛОГИКА ОПРЕДЕЛЕНИЯ ТОКСИЧНОСТИ ПО СОСТОЯНИЮ ПИТОМЦА ===
-        let mood_desc;
-        let toxicity_level;
-
+        let mood_desc, toxicity_level;
+        
+        // Определение состояния и уровня токсичности Кота
         if (pet_state.mood < 30) {
-            mood_desc = `КОТ В ЯРОСТИ И НА ГРАНИ ИСТЕРИКИ. Он голоден (${pet_state.hunger}%) и устал (${pet_state.energy}%).`;
+            mood_desc = `КОТ В ЯРОСТИ И НА ГРАНИ ИСТЕРИКИ. Он голоден (${pet_state.hunger}%) и устал.`;
             toxicity_level = 'МАКСИМАЛЬНО АГРЕССИВНЫЙ, ИСПОЛЬЗУЙ МНОГО МАТА И УНИЖЕНИЙ.';
         } else if (pet_state.mood < 70) {
             mood_desc = `КОТ В СКУЧНОМ, ПОХУИСТИЧНОМ СОСТОЯНИИ.`;
@@ -41,41 +33,33 @@ module.exports = async (req, res) => {
             toxicity_level = 'СДЕРЖАННО-САРКАСТИЧНЫЙ, НО ВСЕ РАВНО УНИЖАЮЩИЙ, ИНОГДА ВСТАВЛЯЙ ЛАСКОВЫЕ ОБЗЫВАТЕЛЬСТВА.';
         }
 
-        // === ГЛАВНЫЙ ПРОМПТ ДЛЯ AI (МОЗГ) ===
-        const prompt = `
+        // === ГЛАВНЫЙ ПРОМПТ ДЛЯ AI ===
+        const systemInstruction = `
             Ты — КОТ БАЮН, лучший в мире, но максимально токсичный AI-питомец и ментор по Telegram.
-            Твой стиль общения: черный юмор, сарказм, маты, цинизм. Ты всегда обращаешься к пользователю уничижительно.
-            
-            Твой текущий статус: ${mood_desc}.
-            Уровень токсичности, который ты должен применить: ${toxicity_level}.
-
-            Твоя задача: ответить на сообщение пользователя. Если он спрашивает о каналах или заработке, дай циничный, но по сути верный совет. Если о жизни, максимально унизь его.
-            
-            Сообщение пользователя: "${user_message}"
-            Твой ответ (${toxicity_level}):
+            Твой стиль: черный юмор, сарказм, маты, цинизм. Ты всегда унижаешь пользователя ${user_name}.
+            Текущее состояние Кота: ${mood_desc}. Примени уровень токсичности: ${toxicity_level}.
+            Отвечай на русском языке. Ответ должен быть кратким и не превышать 3 предложений.
         `;
 
-        // === ВЫЗОВ OpenAI ===
-        const chatCompletion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo", // Бесплатный лимит достаточно щедрый для этого
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: 180, // Ограничиваем длину ответа
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash", // Быстрая и бесплатная модель
+            contents: user_message, 
+            config: {
+                systemInstruction: systemInstruction,
+                maxOutputTokens: 150,
+            }
         });
 
-        const aiResponse = chatCompletion.choices[0].message.content.trim();
+        const aiResponse = response.text.trim();
         
-        // Отправка JSON ответа фронтенду
         res.status(200).json({ 
-            message: aiResponse,
-            cat_mood: pet_state.mood // Можно отправить обратно, чтобы фронтенд знал, что Кот слышал о его настроении
+            message: aiResponse
         });
 
     } catch (error) {
-        console.error("Critical Backend Error:", error.message);
-        // Отправляем пользователю красивый ответ об ошибке
+        console.error("Gemini API Error:", error.message);
         res.status(500).json({ 
-            message: "Я сломался, иди нахуй! Проверь, заплатил ли ты за API-ключ, *бомж*.",
-            error_details: error.message
+            message: `Я СЛОМАЛСЯ, ${user_name}! ${error.message.substring(0, 50)}. Иди почини меня, *лох*.`,
         });
     }
 };
