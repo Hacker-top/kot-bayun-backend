@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Backend for the Toxic Pet Telegram Mini App using Vercel and Gemini.",
   "dependencies": {
-    "@google/generative-ai": "^0.1.0" // <-- ИСПОЛЬЗУЕМ СТАРЫЙ, СТАБИЛЬНЫЙ ПАКЕТ
-  },
-  "engines": {
-    "node": "18.x" 
+    "@google/generative-ai": "^0.1.0" 
   }
 }
