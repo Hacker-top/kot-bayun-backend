@@ -10,29 +10,43 @@
 
     <style>
         /* Общие стили и сброс */
+        :root {
+            /* Переменные для легкой кастомизации */
+            --primary-color: var(--tg-theme-button-color, #007aff);
+            --secondary-color: var(--tg-theme-secondary-bg-color, #e9e9eb);
+            --text-color: var(--tg-theme-text-color, #1c1c1c);
+            --bg-color: var(--tg-theme-bg-color, #f5f5f5);
+            --hint-color: var(--tg-theme-hint-color, #999999);
+        }
+
         body {
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            /* Используем переменные Telegram для фона */
-            background-color: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #1c1c1c);
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             height: 100vh; 
             overflow: hidden; 
-            transition: background-color 0.3s;
+            transition: background-color 0.3s ease;
         }
 
         /* 1. Контейнер Анимации Кота */
         #cat-animation-container {
-            height: 180px;
+            height: 180px; 
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            padding-top: 10px;
+            padding-top: 15px;
+            background-color: var(--secondary-color); /* Фон для кота */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Легкая тень под котом */
+            flex-shrink: 0; /* Чтобы не сжимался */
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            margin-bottom: 10px;
         }
 
         /* 2. Область Чата */
@@ -42,33 +56,44 @@
             padding: 10px 15px;
             display: flex;
             flex-direction: column-reverse; 
-            gap: 8px;
+            gap: 10px; /* Расстояние между сообщениями */
             scroll-behavior: smooth; 
+            /* Стильный скроллбар (только для Webkit) */
+            &::-webkit-scrollbar {
+                width: 8px;
+            }
+            &::-webkit-scrollbar-track {
+                background: var(--bg-color);
+            }
+            &::-webkit-scrollbar-thumb {
+                background: var(--hint-color);
+                border-radius: 10px;
+            }
         }
 
         /* Стили для отдельных сообщений */
         .message {
             max-width: 85%;
-            padding: 12px 16px;
-            border-radius: 20px;
+            padding: 14px 18px;
+            border-radius: 25px;
             line-height: 1.5;
             word-wrap: break-word;
-            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); 
             animation: fadeIn 0.3s ease-out; 
         }
 
         .user-message {
             align-self: flex-end;
-            background-color: var(--tg-theme-button-color, #007aff); 
+            background-color: var(--primary-color); 
             color: var(--tg-theme-button-text-color, #ffffff);
-            border-bottom-right-radius: 6px; 
+            border-bottom-right-radius: 8px; 
         }
 
         .bot-message {
             align-self: flex-start;
-            background-color: var(--tg-theme-secondary-bg-color, #e9e9eb);
-            color: var(--tg-theme-text-color, #1c1c1c);
-            border-bottom-left-radius: 6px;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border-bottom-left-radius: 8px;
         }
 
         /* Анимация появления сообщения */
@@ -81,41 +106,46 @@
         #input-panel {
             display: flex;
             align-items: center;
-            padding: 8px 10px;
-            border-top: 1px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.05); 
+            padding: 10px;
+            border-top: 1px solid var(--secondary-color);
+            background-color: var(--bg-color);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03); 
+            flex-shrink: 0;
         }
 
         #message-input {
             flex-grow: 1;
-            padding: 10px 18px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 22px;
-            font-size: 16px;
+            border-radius: 28px;
+            font-size: 17px;
             outline: none;
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-            margin-right: 8px;
-            transition: background-color 0.2s;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            margin-right: 10px;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #message-input:focus {
+            box-shadow: 0 0 0 2px var(--primary-color, #007aff);
         }
 
         #send-button {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             border: none;
             border-radius: 50%;
-            background-color: var(--tg-theme-button-color, #007aff);
+            background-color: var(--primary-color);
             color: var(--tg-theme-button-text-color, #ffffff);
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: background-color 0.2s, transform 0.1s;
+            transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
         #send-button:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
         }
 
         #send-button:disabled {
@@ -125,13 +155,13 @@
 
         /* Стили для анимации печати */
         .typing-indicator {
-            padding: 12px 16px;
+            padding: 14px 18px;
             align-self: flex-start;
             font-style: italic;
-            color: var(--tg-theme-hint-color, #999999);
-            background-color: var(--tg-theme-secondary-bg-color, #e9e9eb);
-            border-radius: 20px;
-            border-bottom-left-radius: 6px;
+            color: var(--hint-color);
+            background-color: var(--secondary-color);
+            border-radius: 25px;
+            border-bottom-left-radius: 8px;
             animation: pulse 1s infinite;
         }
 
@@ -162,13 +192,14 @@
 
     <script>
         // !!! 1. ЗАМЕНИ ЭТОТ URL НА URL ТВОЕГО ЗАДЕПЛОЕННОГО БЭКЕНДА (Render.com/Vercel) !!!
-        const BACKEND_URL = 'https://kot-bayun.onrender.com'; 
+        const BACKEND_URL = 'https://bayan-cat-python-api-xyz123.onrender.com'; 
 
-        // --- 2. ПУТИ К АНИМАЦИЯМ LOTTIE (ЗАМЕНИ!) ---
+        // --- 2. ПУТИ К АНИМАЦИЯМ LOTTIE (ЗАМЕНИ НА СВОИ!) ---
+        // Эти анимации уже включают лицо и характер. Подбери похожие или используй эти.
         const ANIMATION_PATHS = {
-            IDLE: 'https://assets-v2.lottiefiles.com/a/5a9101d2-0949-436b-967a-e457582b95b8/qK6wTzVd1Q.json', // Кот просто сидит/лежит (ПРИМЕР)
-            THINKING: 'https://assets-v2.lottiefiles.com/a/90f0d366-6815-468c-b695-81676646b9a8/W1v7u7cM3v.json', // Кот "думает" / "печатает" (ПРИМЕР)
-            ANGRY: 'https://assets-v2.lottiefiles.com/a/f9b8c005-72d9-43c2-a8c6-2c5e533c373a/vX6yF9c8hP.json' // Кот злится / ошибка (ПРИМЕР)
+            IDLE: 'https://lottie.host/17691515-580a-47d3-a442-70b91e59c25f/hWw18cI8jF.json', // Пример: Кот сидит/лежит, моргает
+            THINKING: 'https://lottie.host/9f5c4049-74e2-4752-b430-80a221f06124/H0P4pLqR6T.json', // Пример: Кот "печатает" или напряженно думает
+            ANGRY: 'https://lottie.host/ec6b8156-a077-440f-ae52-c3a51f04581f/778GqG19jJ.json' // Пример: Злой кот, рычит или недоволен
         };
 
         // DOM элементы
@@ -184,9 +215,6 @@
 
         // --- ФУНКЦИИ УТИЛИТЫ ---
 
-        /**
-         * Создает и добавляет новое сообщение в чат
-         */
         function addMessage(text, sender) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', `${sender}-message`);
@@ -196,9 +224,6 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        /**
-         * Показывает индикатор "Кот печатает..."
-         */
         function showTypingIndicator() {
             if (isTyping) return;
             isTyping = true;
@@ -212,9 +237,6 @@
             messagesList.prepend(indicator);
         }
 
-        /**
-         * Скрывает индикатор печати
-         */
         function hideTypingIndicator() {
             isTyping = false;
             setCatState('IDLE'); 
@@ -225,9 +247,6 @@
             }
         }
 
-        /**
-         * Управляет анимацией Lottie
-         */
         function setCatState(state) {
             const animationPath = ANIMATION_PATHS[state] || ANIMATION_PATHS.IDLE;
             
@@ -246,9 +265,6 @@
 
         // --- ОСНОВНАЯ ЛОГИКА ---
 
-        /**
-         * Отправка сообщения на бэкенд
-         */
         async function sendMessage() {
             const message = messageInput.value.trim();
             
@@ -295,11 +311,17 @@
                 Telegram.WebApp.ready();
                 Telegram.WebApp.expand();
 
-                const headerColor = Telegram.WebApp.themeParams.header_bg_color;
-                if (headerColor) {
-                    document.documentElement.style.setProperty('--tg-theme-header-bg-color', headerColor);
+                // Применяем цвета темы Telegram
+                const themeParams = Telegram.WebApp.themeParams;
+                if (themeParams) {
+                    document.documentElement.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#f5f5f5');
+                    document.documentElement.style.setProperty('--tg-theme-text-color', themeParams.text_color || '#1c1c1c');
+                    document.documentElement.style.setProperty('--tg-theme-hint-color', themeParams.hint_color || '#999999');
+                    document.documentElement.style.setProperty('--tg-theme-button-color', themeParams.button_color || '#007aff');
+                    document.documentElement.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color || '#ffffff');
+                    document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', themeParams.secondary_bg_color || '#e9e9eb');
                 }
-
+                
                 Telegram.WebApp.onEvent('viewportChanged', () => {
                     Telegram.WebApp.expand();
                 });
