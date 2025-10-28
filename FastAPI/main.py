@@ -1,8 +1,10 @@
 import os
+import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google import genai
+# 'dotenv' убран, так как Render сам подтягивает переменные окружения
 
 # --- Инициализация ---
 
@@ -13,11 +15,10 @@ app = FastAPI(
     redoc_url=None
 )
 
-# Ключ Gemini API будет автоматически взят из переменных окружения Render
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# --- Настройка CORS (Обязательно для связи с фронтендом) ---
-origins = ["*"] # Разрешаем любой домен (потом можно ограничить только GitHub Pages)
+# --- Настройка CORS ---
+origins = ["*"] 
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,6 +43,45 @@ SYSTEM_PROMPT = """
 3. Ты всегда отвечаешь на русском языке.
 """
 
+# --- ХАРДКОДЕРНЫЕ ОТВЕТЫ (НОВАЯ ФУНКЦИЯ) ---
+
+HARDCODED_RESPONSES = {
+    # Команды для проверки здоровья/статуса
+    "статус": [
+        "Мой статус? Жду, когда ты наконец исчезнешь.", 
+        "Сплю. Что, блять, непонятного? Отъебись.", 
+        "Жив, к сожалению. Твой IQ падает, мой растет, дисбаланс."
+    ],
+    "как дела": [
+        "Не твоё собачье дело. Лучше, чем у тебя, это факт.", 
+        "Как всегда. Лежу, жду обеда, презираю тебя.",
+        "Заебали. Все отлично, пока ты не начал задавать тупые вопросы."
+    ],
+    # Команды для информации (будет заглушка)
+    "погода": [
+        "Какая, нахуй, погода? Мне похуй. Надень шапку и иди работай.",
+        "Снег, дождь, метеорит. Мне плевать, пока миска полная.",
+        "Посмотри в окно, тупица. Я тебе что, Яндекс?"
+    ],
+    # Команды на комплимент (самый дерзкий ответ)
+    "ты милый": [
+        "Твои попытки подлизаться жалки. Дай жрать.",
+        "Милый? Я — злобный гений. У тебя, похоже, проблемы со зрением.",
+        "Иди нахуй, раб. Хватит сюсюкать."
+    ],
+}
+
+def get_hardcoded_response(message: str) -> str | None:
+    """Ищет ключевые слова в сообщении и возвращает хардкодерный ответ."""
+    
+    # Приводим сообщение к нижнему регистру для сравнения
+    msg = message.lower().strip()
+    
+    for keyword, responses in HARDCODED_RESPONSES.items():
+        if keyword in msg:
+            return random.choice(responses)
+            
+    return None
 
 # --- Эндпоинты API ---
 
@@ -54,11 +94,17 @@ async def health_check():
 
 @app.post("/chat")
 async def chat_endpoint(request: MessageRequest):
-    """Генерирует ответ Кота Баюна с использованием Gemini API."""
+    """Принимает сообщение, проверяет хардкодерные ответы, затем вызывает Gemini API."""
+    
+    # 1. Проверяем хардкодерные ответы
+    hardcoded_response = get_hardcoded_response(request.message)
+    if hardcoded_response:
+        return {"response": hardcoded_response}
+        
+    # 2. Если хардкодерный ответ не найден, вызываем нейросеть
     
     if not GEMINI_API_KEY:
-         # Это нужно для случаев, когда ключ не установлен на Render
-         raise HTTPException(status_code=500, detail="Кот потерял свой ключ от дома (API Key).")
+         raise HTTPException(status_code=500, detail="Кот потерял свой ключ от дома (API Key) и не может думать.")
     
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
@@ -81,7 +127,6 @@ async def chat_endpoint(request: MessageRequest):
 
     except Exception as e:
         print(f"Ошибка при вызове Gemini API: {e}")
-        # Возвращаем понятную ошибку, чтобы фронтенд мог ее обработать
         raise HTTPException(status_code=500, detail="Кот в ярости: 'Сервер сдох, почини, раб!'")
 
 # Конец main.py
