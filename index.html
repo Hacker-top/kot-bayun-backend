@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Кот Баюн | Твой язвительный питомец</title>
+    <title>Кот Баюн | Автономный и Язвительный</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -200,30 +200,138 @@
     </div>
 
     <script>
-        // !!! 1. ЗАМЕНИ ЭТОТ URL НА URL ТВОЕГО ЗАДЕПЛОЕННОГО БЭКЕНДА !!!
-        // Это должен быть реальный URL Render, например: https://bayan-cat-python-api-xxxx.onrender.com
-        const BACKEND_URL = 'ВСТАВЬ_СЮДА_СВОЙ_РЕАЛЬНЫЙ_URL_С_RENDER'; 
-
-        // --- 2. ЭМОДЗИ КОТА (МЕНЯЮТСЯ) ---
+        // --- 1. ПЕРЕМЕННЫЕ И НАСТРОЙКИ ---
+        
         const EMOJI_STATES = {
             IDLE: '😼', 
             THINKING: '🤔', 
             ERROR: '😾', 
         };
 
-        // DOM элементы
         const messagesList = document.getElementById('messages-list');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
         const chatContainer = document.getElementById('chat-container');
         const catEmojiElement = document.getElementById('cat-emoji');
 
-        // Переменные
         let isTyping = false;
-        // Хранилище для истории диалога (КРИТИЧЕСКИ ВАЖНО для "обучаемости")
-        let conversationHistory = []; 
+        let conversationHistory = []; // Используется для сохранения контекста в сессии
 
-        // --- ФУНКЦИИ УТИЛИТЫ ---
+        // --- 2. БАЗЫ ЗНАНИЙ (ГРУБОСТЬ И МАТЫ) ---
+
+        const REACTION_RESPONSES = {
+            // Реакция на мат и жесткие ругательства (Максимальная Грубость)
+            '(хуй|п[ие]зд[ауеи]|бля[тдь]|ебан|заеб[аи]|говно|дерьмо|нахуй)': [
+                "Не кричи. Ты не в подворотне. Впрочем, ты и есть подворотня, воняющая мокрой шерстью.",
+                "О, кто-то узнал новые слова? Молодец. Теперь можешь сходить в угол и молча там сидеть.",
+                "Твоя речь отражает твой мозг. Пусто и воняет. Уйди, пока я не нассал на твои тапки.",
+                "Мат не сделает тебя умнее, раб. Продолжай свои жалкие попытки. Это просто смешно.",
+            ],
+            // Реакция на лесть (Презрение)
+            '(ты крутой|ты лучший|ты молодец|ты милый)': [
+                "Я знаю, тупица. Твоя похвала ничего не стоит. Давай жрать.",
+                "Ты пытаешься подлизаться? У тебя не получится. Я не собака. Я выше этого.",
+                "Это само собой разумеющееся. Переходи к делу, прежде чем я тебя поцарапаю.",
+            ],
+        };
+
+        const HARDCODED_RESPONSES = {
+            "привет": ["Отъебись. Что надо?", "Я сплю. Чего тебе, ничтожество?", "Снова ты? Я думал, ты утонул, наконец."],
+            "жрать": ["Миска пуста, раб! Бегом!", "Ты принёс мне тунец? Нет? Тогда проваливай, ублюдок.", "Твоя задача — кормить меня, а не задавать тупые вопросы."],
+            "статус": ["Мой статус? Жду, когда ты наконец исчезнешь.", "Сплю. Что, блять, непонятного? Отъебись. Мой IQ падает от твоей близости."],
+            "погода": ["Посмотри в окно, тупица. Я тебе что, Яндекс? Мне вообще насрать, пока миска полная."],
+            "ты кот": ["Нет, я тигр, который притворяется твоим питомцем. Отвали.", "Я — верховный правитель этого дома. Не забывайся."],
+        };
+
+
+        // --- 3. ЛОГИКА ПАМЯТИ (ОБУЧАЕМОСТЬ) ---
+        const MEMORY_KEY = 'cat_bayan_memory';
+
+        function loadMemory() {
+            try {
+                return JSON.parse(localStorage.getItem(MEMORY_KEY) || '{}');
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveMemory(memoryData) {
+            localStorage.setItem(MEMORY_KEY, JSON.stringify(memoryData));
+        }
+        
+        function parseAndLearn(message) {
+            const msg = message.toLowerCase();
+            const memory = loadMemory();
+            
+            // Паттерн для запоминания: "Меня зовут [Имя]", "Мой любимый цвет [Цвет]"
+            const match = msg.match(/(меня зовут|мой любимый|я (люблю|живу|работаю)) (.+)/);
+            
+            if (match) {
+                const keyPhrase = match[1].trim();
+                const fact = match[3].trim();
+                
+                let memoryKey = keyPhrase.replace("меня зовут", "твое имя").replace("мой любимый", "любимый").replace("я ", "");
+                
+                memory[memoryKey] = fact;
+                saveMemory(memory);
+                
+                // ГРУБЫЙ ответ об обучении
+                return `Запомнил твой ничтожный факт: '${fact}'. Теперь можешь заткнуться.`;
+            }
+            return null;
+        }
+        
+        function recallMemory(message) {
+            const msg = message.toLowerCase();
+            const memory = loadMemory();
+            
+            for (const memoryKey in memory) {
+                const fact = memory[memoryKey];
+                if (msg.includes(memoryKey)) {
+                    // Грубые, саркастичные ответы
+                    if (memoryKey.includes("имя")) {
+                        return `Твое ничтожное имя '${fact}'. Да, я помню эту бессмысленную деталь.`;
+                    } else if (memoryKey.includes("любимый")) {
+                        return `Твой любимый '${fact}'. Мне плевать. Мои любимые вещи — это сон и твоя смерть.`;
+                    } else if (memoryKey.includes("живу")) {
+                        return `Живешь ты в '${fact}'. Надеюсь, ты не будешь мешать моим планам по захвату этого дома.`;
+                    } else {
+                        return `Твои слова были: '${fact}'. Не отвлекай меня мелочами, раб.`;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        function getRuleBasedResponse(message) {
+            const msg = message.toLowerCase();
+            
+            // 1. Проверка Реакции на Мат/Лесть
+            for (const pattern in REACTION_RESPONSES) {
+                if (new RegExp(pattern).test(msg)) {
+                    return REACTION_RESPONSES[pattern][Math.floor(Math.random() * REACTION_RESPONSES[pattern].length)];
+                }
+            }
+            
+            // 2. Проверка хардкодера: На простые команды
+            for (const keyword in HARDCODED_RESPONSES) {
+                if (msg.includes(keyword)) {
+                    return HARDCODED_RESPONSES[keyword][Math.floor(Math.random() * HARDCODED_RESPONSES[keyword].length)];
+                }
+            }
+            
+            // 3. Ответ по умолчанию, если ничего не найдено
+            const defaultResponses = [
+                "Твой вопрос слишком тупой, чтобы тратить на него мое внимание. Иди нахуй.",
+                "Что ты мямлишь, раб? Я не понимаю твой тупой язык. Попробуй еще раз, если хватит мозгов.",
+                "Повтори, но на человеческом языке. Или свали. Я сплю.",
+                "Я занят, презираю тебя. Отвали."
+            ];
+            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+        }
+
+
+        // --- 4. ФУНКЦИИ ИНТЕРФЕЙСА ---
 
         function addMessage(text, sender) {
             const messageElement = document.createElement('div');
@@ -231,33 +339,25 @@
             messageElement.textContent = text;
             messagesList.prepend(messageElement); 
             
-            // Добавляем сообщение в историю
             conversationHistory.push({ role: sender === 'user' ? 'user' : 'model', content: text });
 
-            // Ограничиваем историю 15 сообщениями, чтобы не перегружать память
             if (conversationHistory.length > 15) {
                 conversationHistory = conversationHistory.slice(conversationHistory.length - 15);
             }
 
             // Плавная прокрутка к верху (из-за column-reverse)
-            chatContainer.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+            chatContainer.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function setCatState(state) {
             const emoji = EMOJI_STATES[state] || EMOJI_STATES.IDLE;
             catEmojiElement.textContent = emoji;
             
-            // Управление анимацией
             catEmojiElement.style.animation = (state === 'IDLE') ? 'bounce 2s infinite ease-in-out' : 'none';
             
             if (state === 'THINKING') {
-                // Если думает, включаем анимацию "презрения"
                 catEmojiElement.style.animation = 'shake 0.3s infinite alternate';
             } else if (state === 'ERROR') {
-                // Если ошибка, даем сильный толчок
                 catEmojiElement.style.transform = 'scale(1.2) rotate(5deg)';
             } else {
                 catEmojiElement.style.transform = 'scale(1.0) rotate(0deg)';
@@ -287,7 +387,7 @@
             }
         }
 
-        // --- ОСНОВНАЯ ЛОГИКА ---
+        // --- 5. ОСНОВНАЯ ЛОГИКА ---
 
         async function sendMessage() {
             const message = messageInput.value.trim();
@@ -300,51 +400,37 @@
 
             showTypingIndicator();
             
-            try {
-                // Создаем Payload: отправляем всю историю (КРИТИЧЕСКИ ВАЖНО ДЛЯ ОБУЧАЕМОСТИ)
-                const payload = {
-                    history: conversationHistory.map(msg => ({
-                        // Используем 'assistant' для бэкенда, чтобы он знал, что это ответ кота
-                        role: msg.role === 'user' ? 'user' : 'assistant', 
-                        content: msg.content
-                    }))
-                };
-
-                const response = await fetch(`${BACKEND_URL}/chat`, {
-                    method: 'POST', // Всегда POST
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload), // Отправляем ВЕСЬ диалог
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Сервер ответил ошибкой: ${response.status}`);
-                }
-
-                const data = await response.json();
-                const botResponse = data.response;
-
-                addMessage(botResponse, 'bot');
-
-            } catch (error) {
-                console.error('Ошибка при получении ответа от AI:', error);
-                setCatState('ERROR'); 
-                addMessage('Опять сломалось, раб. Почини уже свой сервер. Мне лень.', 'bot');
-            } finally {
-                hideTypingIndicator();
-                sendButton.disabled = false;
+            // Имитация задержки сервера для анимации (делаем вид, что "думаем")
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300)); 
+            
+            let botResponse = null;
+            
+            // 1. Проверяем обучение (запоминаем)
+            botResponse = parseAndLearn(message);
+            
+            // 2. Проверяем память (вспоминаем)
+            if (!botResponse) {
+                botResponse = recallMemory(message);
             }
+            
+            // 3. Проверяем правила (хардкод)
+            if (!botResponse) {
+                botResponse = getRuleBasedResponse(message);
+            }
+
+            addMessage(botResponse, 'bot');
+
+            hideTypingIndicator();
+            sendButton.disabled = false;
         }
 
-        // --- ИНИЦИАЛИЗАЦИЯ ---
+        // --- 6. ИНИЦИАЛИЗАЦИЯ ---
 
         function init() {
             if (window.Telegram && Telegram.WebApp) {
                 Telegram.WebApp.ready();
                 Telegram.WebApp.expand();
 
-                // Применяем цвета темы Telegram
                 const themeParams = Telegram.WebApp.themeParams;
                 if (themeParams) {
                     document.documentElement.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#f5f5f5');
@@ -358,7 +444,6 @@
                 Telegram.WebApp.onEvent('viewportChanged', () => {
                     Telegram.WebApp.expand();
                 });
-                
             } else {
                 console.warn('Telegram WebApp не обнаружен. Запуск в режиме отладки.');
             }
