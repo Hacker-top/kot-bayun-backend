@@ -3,8 +3,8 @@ import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from google import genai
-# 'dotenv' убран, так как Render сам подтягивает переменные окружения
+from openai import OpenAI # <-- Теперь используем клиента OpenAI
+# google.genai больше не нужен
 
 # --- Инициализация ---
 
@@ -15,7 +15,8 @@ app = FastAPI(
     redoc_url=None
 )
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# !!! Используем новую переменную окружения !!!
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 # --- Настройка CORS ---
 origins = ["*"] 
@@ -43,10 +44,9 @@ SYSTEM_PROMPT = """
 3. Ты всегда отвечаешь на русском языке.
 """
 
-# --- ХАРДКОДЕРНЫЕ ОТВЕТЫ (НОВАЯ ФУНКЦИЯ) ---
+# --- ХАРДКОДЕРНЫЕ ОТВЕТЫ (Оставляем) ---
 
 HARDCODED_RESPONSES = {
-    # Команды для проверки здоровья/статуса
     "статус": [
         "Мой статус? Жду, когда ты наконец исчезнешь.", 
         "Сплю. Что, блять, непонятного? Отъебись.", 
@@ -57,13 +57,11 @@ HARDCODED_RESPONSES = {
         "Как всегда. Лежу, жду обеда, презираю тебя.",
         "Заебали. Все отлично, пока ты не начал задавать тупые вопросы."
     ],
-    # Команды для информации (будет заглушка)
     "погода": [
         "Какая, нахуй, погода? Мне похуй. Надень шапку и иди работай.",
         "Снег, дождь, метеорит. Мне плевать, пока миска полная.",
         "Посмотри в окно, тупица. Я тебе что, Яндекс?"
     ],
-    # Команды на комплимент (самый дерзкий ответ)
     "ты милый": [
         "Твои попытки подлизаться жалки. Дай жрать.",
         "Милый? Я — злобный гений. У тебя, похоже, проблемы со зрением.",
@@ -72,15 +70,10 @@ HARDCODED_RESPONSES = {
 }
 
 def get_hardcoded_response(message: str) -> str | None:
-    """Ищет ключевые слова в сообщении и возвращает хардкодерный ответ."""
-    
-    # Приводим сообщение к нижнему регистру для сравнения
     msg = message.lower().strip()
-    
     for keyword, responses in HARDCODED_RESPONSES.items():
         if keyword in msg:
             return random.choice(responses)
-            
     return None
 
 # --- Эндпоинты API ---
@@ -88,45 +81,46 @@ def get_hardcoded_response(message: str) -> str | None:
 @app.get("/")
 async def health_check():
     """Проверка здоровья сервиса для Render."""
-    if not GEMINI_API_KEY:
-        return {"status": "ERROR", "message": "API Key не найден. Проверь настройки Render."}
-    return {"status": "LIVE", "cat": "готов тебя унизить"}
+    if not DEEPSEEK_API_KEY:
+        # Проверяем новую переменную
+        return {"status": "ERROR", "message": "DEEPSEEK API Key не найден. Проверь настройки Render."}
+    return {"status": "LIVE", "cat": "готов тебя унизить (теперь с DeepSeek)"}
 
 @app.post("/chat")
 async def chat_endpoint(request: MessageRequest):
-    """Принимает сообщение, проверяет хардкодерные ответы, затем вызывает Gemini API."""
+    """Принимает сообщение, проверяет хардкодерные ответы, затем вызывает DeepSeek API."""
     
     # 1. Проверяем хардкодерные ответы
     hardcoded_response = get_hardcoded_response(request.message)
     if hardcoded_response:
         return {"response": hardcoded_response}
         
-    # 2. Если хардкодерный ответ не найден, вызываем нейросеть
-    
-    if not GEMINI_API_KEY:
-         raise HTTPException(status_code=500, detail="Кот потерял свой ключ от дома (API Key) и не может думать.")
+    # 2. Вызываем DeepSeek
+    if not DEEPSEEK_API_KEY:
+         raise HTTPException(status_code=500, detail="Кот потерял свой ключ от дома (DEEPSEEK API Key) и не может думать.")
     
     try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        model = "gemini-2.5-flash" 
+        # Инициализируем клиента DeepSeek через совместимость с OpenAI
+        client = OpenAI(
+            api_key=DEEPSEEK_API_KEY,
+            base_url="https://api.deepseek.com/v1" # Указываем DeepSeek
+        )
+        
+        model = "deepseek-chat" # Модель DeepSeek
 
-        config = {
-            "system_instruction": SYSTEM_PROMPT,
-            "temperature": 0.9,
-        }
-
-        response = client.models.generate_content(
+        response = client.chat.completions.create(
             model=model,
-            contents=request.message,
-            config=config
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": request.message}
+            ],
+            temperature=0.9
         )
 
-        bot_response = response.text
+        bot_response = response.choices[0].message.content
         
         return {"response": bot_response}
 
     except Exception as e:
-        print(f"Ошибка при вызове Gemini API: {e}")
+        print(f"Ошибка при вызове DeepSeek API: {e}")
         raise HTTPException(status_code=500, detail="Кот в ярости: 'Сервер сдох, почини, раб!'")
-
-# Конец main.py
