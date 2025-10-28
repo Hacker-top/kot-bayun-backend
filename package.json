@@ -1,16 +1,16 @@
 {
-  "name": "kot-bayun-ai-backend-gemini",
+  "name": "kot-bayun-render-backend",
   "version": "1.0.0",
-  "description": "Backend for the Toxic Pet Telegram Mini App using Render and Gemini.",
+  "description": "Clean backend for Kot Bayun on Render.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.1.0",
-    "express": "^4.19.2",      
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5"
+    "@google/generative-ai": "0.1.0",
+    "express": "4.19.2",      
+    "body-parser": "1.20.2",
+    "cors": "2.8.5"
   },
   "engines": {
     "node": "18.x" 
