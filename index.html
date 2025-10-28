@@ -6,8 +6,6 @@
     <title>Кот Баюн | Твой язвительный питомец</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
-
     <style>
         /* Общие стили и сброс */
         :root {
@@ -29,28 +27,36 @@
             flex-direction: column;
             height: 100vh; 
             overflow: hidden; 
-            transition: background-color 0.3s ease;
         }
 
-        /* 1. Контейнер Анимации Кота */
+        /* 1. Контейнер Кота (Без серой полосы - сливается с фоном) */
         #cat-animation-container {
-            height: 180px; 
+            height: 120px; 
             width: 100%;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
-            padding-top: 15px;
-            background-color: var(--secondary-color);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 20px 0 10px;
+            /* Цвет фона убран, чтобы слиться с body */
+            background-color: var(--bg-color); 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03); /* Легкая тень для отделения */
             flex-shrink: 0;
-            margin-bottom: 10px;
         }
-        /* Убедимся, что Lottie SVG занимает место в контейнере */
-        #cat-animation-container > svg {
-            width: 100%;
-            height: 100%;
-            max-height: 180px;
+
+        /* Стиль для эмодзи */
+        #cat-emoji {
+            margin: 0;
+            font-size: 70px; /* Крупный, заметный эмодзи */
+            line-height: 1;
+            transition: transform 0.2s ease-in-out;
+            animation: bounce 2s infinite ease-in-out; /* Легкое постоянное движение */
+        }
+        
+        /* Анимация "дыхания" эмодзи */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1.0); }
+            50% { transform: translateY(-5px) scale(1.05); }
         }
 
         /* 2. Область Чата */
@@ -113,14 +119,14 @@
             border-radius: 28px;
             font-size: 17px;
             outline: none;
-            background-color: var(--secondary-color);
+            background-color: var(--secondary-bg-color); /* Используем secondary_bg для поля ввода */
             color: var(--text-color);
             margin-right: 10px;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            transition: box-shadow 0.2s ease;
         }
 
         #message-input:focus {
-            box-shadow: 0 0 0 2px var(--primary-color, #007aff);
+            box-shadow: 0 0 0 2px var(--primary-color);
         }
 
         #send-button {
@@ -169,7 +175,8 @@
 <body>
 
     <div id="cat-animation-container">
-        </div>
+        <h1 id="cat-emoji">😼</h1>
+    </div>
 
     <div id="chat-container">
         <div id="messages-list">
@@ -188,12 +195,11 @@
         // !!! 1. ЗАМЕНИ ЭТОТ URL НА URL ТВОЕГО ЗАДЕПЛОЕННОГО БЭКЕНДА !!!
         const BACKEND_URL = 'https://bayan-cat-python-api-xyz123.onrender.com'; 
 
-        // --- 2. ПУТИ К АНИМАЦИЯМ LOTTIE (ПРОВЕРЕННЫЕ ССЫЛКИ) ---
-        // Эти анимации будут гарантированно работать и красиво меняться
-        const ANIMATION_PATHS = {
-            IDLE: 'https://cdn.lottiefiles.com/packages/lf20_6u0fLqX0n4.json', // Ленивый/Спящий кот
-            THINKING: 'https://cdn.lottiefiles.com/packages/lf20_s8j4D2qB0Z.json', // Кот стучит по клавиатуре / думает
-            ANGRY: 'https://cdn.lottiefiles.com/packages/lf20_tO2t0s3tS3.json' // Кот злится / ошибка
+        // --- 2. ЭМОДЗИ КОТА (МЕНЯЮТСЯ) ---
+        const EMOJI_STATES = {
+            IDLE: '😼', // Саркастичный, надменный кот (по умолчанию)
+            THINKING: '🤔', // Кот "думает" (пока ждем ответа)
+            ERROR: '😾', // Злой кот (на случай ошибки сервера)
         };
 
         // DOM элементы
@@ -201,9 +207,9 @@
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
         const chatContainer = document.getElementById('chat-container');
+        const catEmojiElement = document.getElementById('cat-emoji');
 
         // Переменные
-        let catLottieAnimation;
         let isTyping = false;
 
         // --- ФУНКЦИИ УТИЛИТЫ ---
@@ -213,7 +219,15 @@
             messageElement.classList.add('message', `${sender}-message`);
             messageElement.textContent = text;
             messagesList.prepend(messageElement); 
+            // Прокрутка вниз
             chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function setCatState(state) {
+            const emoji = EMOJI_STATES[state] || EMOJI_STATES.IDLE;
+            catEmojiElement.textContent = emoji;
+            // Добавляем кратковременный эффект при смене состояния
+            catEmojiElement.style.transform = (state === 'ERROR' || state === 'THINKING') ? 'scale(1.1)' : 'scale(1.0)';
         }
 
         function showTypingIndicator() {
@@ -237,23 +251,6 @@
             if (indicator) {
                 setTimeout(() => indicator.remove(), 200); 
             }
-        }
-
-        function setCatState(state) {
-            const animationPath = ANIMATION_PATHS[state] || ANIMATION_PATHS.IDLE;
-            
-            if (catLottieAnimation) {
-                catLottieAnimation.destroy();
-            }
-            
-            // Загрузка новой анимации
-            catLottieAnimation = lottie.loadAnimation({
-                container: document.getElementById('cat-animation-container'),
-                renderer: 'svg',
-                loop: true,
-                autoplay: true,
-                path: animationPath
-            });
         }
 
         // --- ОСНОВНАЯ ЛОГИКА ---
@@ -289,7 +286,7 @@
 
             } catch (error) {
                 console.error('Ошибка при получении ответа от AI:', error);
-                setCatState('ANGRY'); 
+                setCatState('ERROR'); 
                 addMessage('Опять сломалось, раб. Почини уже свой сервер. Мне лень.', 'bot');
             } finally {
                 hideTypingIndicator();
@@ -304,6 +301,7 @@
                 Telegram.WebApp.ready();
                 Telegram.WebApp.expand();
 
+                // Применяем цвета темы Telegram
                 const themeParams = Telegram.WebApp.themeParams;
                 if (themeParams) {
                     document.documentElement.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#f5f5f5');
