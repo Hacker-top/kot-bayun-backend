@@ -3,22 +3,22 @@ import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from openai import OpenAI # <-- Теперь используем клиента OpenAI
-# google.genai больше не нужен
+from openai import OpenAI # Используем клиент OpenAI для DeepSeek
 
-# --- Инициализация ---
+# --- Инициализация FastAPI ---
 
 app = FastAPI(
-    title="KOT_BAYUN_API",
+    title="KOT_BAYUN_API_DEEPSEEK",
     version="1.0.0",
     docs_url=None, 
     redoc_url=None
 )
 
-# !!! Используем новую переменную окружения !!!
+# Ключ DeepSeek API из переменных окружения Render
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
-# --- Настройка CORS ---
+# --- Настройка CORS (Разрешает фронтенду стучаться) ---
+# Для продакшена можно заменить "*" на URL твоего GitHub Pages
 origins = ["*"] 
 
 app.add_middleware(
@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Модель для приема сообщения от фронтенда
+# Модель для входящего сообщения
 class MessageRequest(BaseModel):
     message: str
 
@@ -44,9 +44,10 @@ SYSTEM_PROMPT = """
 3. Ты всегда отвечаешь на русском языке.
 """
 
-# --- ХАРДКОДЕРНЫЕ ОТВЕТЫ (Оставляем) ---
+# --- ХАРДКОДЕРНЫЕ ОТВЕТЫ ---
 
 HARDCODED_RESPONSES = {
+    # Команды для проверки здоровья/статуса
     "статус": [
         "Мой статус? Жду, когда ты наконец исчезнешь.", 
         "Сплю. Что, блять, непонятного? Отъебись.", 
@@ -70,10 +71,13 @@ HARDCODED_RESPONSES = {
 }
 
 def get_hardcoded_response(message: str) -> str | None:
+    """Ищет ключевые слова в сообщении и возвращает хардкодерный ответ."""
     msg = message.lower().strip()
-    for keyword, responses in HARDCODED_RESPONSES.items():
+    
+    for keyword, responses in HARDCODED_RESPONSes.items():
         if keyword in msg:
             return random.choice(responses)
+            
     return None
 
 # --- Эндпоинты API ---
@@ -82,9 +86,8 @@ def get_hardcoded_response(message: str) -> str | None:
 async def health_check():
     """Проверка здоровья сервиса для Render."""
     if not DEEPSEEK_API_KEY:
-        # Проверяем новую переменную
         return {"status": "ERROR", "message": "DEEPSEEK API Key не найден. Проверь настройки Render."}
-    return {"status": "LIVE", "cat": "готов тебя унизить (теперь с DeepSeek)"}
+    return {"status": "LIVE", "cat": "готов тебя унизить (на DeepSeek)"}
 
 @app.post("/chat")
 async def chat_endpoint(request: MessageRequest):
@@ -96,6 +99,7 @@ async def chat_endpoint(request: MessageRequest):
         return {"response": hardcoded_response}
         
     # 2. Вызываем DeepSeek
+    
     if not DEEPSEEK_API_KEY:
          raise HTTPException(status_code=500, detail="Кот потерял свой ключ от дома (DEEPSEEK API Key) и не может думать.")
     
@@ -103,10 +107,10 @@ async def chat_endpoint(request: MessageRequest):
         # Инициализируем клиента DeepSeek через совместимость с OpenAI
         client = OpenAI(
             api_key=DEEPSEEK_API_KEY,
-            base_url="https://api.deepseek.com/v1" # Указываем DeepSeek
+            base_url="https://api.deepseek.com/v1" # <--- ОБЯЗАТЕЛЬНЫЙ DeepSeek URL
         )
         
-        model = "deepseek-chat" # Модель DeepSeek
+        model = "deepseek-chat" 
 
         response = client.chat.completions.create(
             model=model,
@@ -117,10 +121,12 @@ async def chat_endpoint(request: MessageRequest):
             temperature=0.9
         )
 
+        # Извлекаем ответ
         bot_response = response.choices[0].message.content
         
         return {"response": bot_response}
 
     except Exception as e:
-        print(f"Ошибка при вызове DeepSeek API: {e}")
+        # Выводим ошибку в логи Render
+        print(f"FATAL DeepSeek API Error: {e}") 
         raise HTTPException(status_code=500, detail="Кот в ярости: 'Сервер сдох, почини, раб!'")
